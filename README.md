@@ -46,8 +46,8 @@ vim config/config.yml
 adb devices
 java -jar target/Thorfinn.jar com.target.app
 
-# big app? give the taint engine more time
-java -jar target/Thorfinn.jar com.target.app --time-limit 600
+# big app? running out of heap space limit time for propogation
+java -jar target/Thorfinn.jar com.target.app --time-limit 300
 ```
 
 `setup.sh` handles Java 17, Maven, JADX, Semgrep, TruffleHog, APKTool, ADB, and Python. Works on macOS (Homebrew) and Linux (apt).
