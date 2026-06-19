@@ -6,13 +6,14 @@
 
 **Automated Android Client-Side Security Scanner**
 
-Thorfinn is an open-source security analysis tool for Android applications built for security engineers who need to identify exploitable client-side vulnerabilities. It performs cross-class taint analysis on decompiled APKs, runs pattern matching rules for misconfigurations, scans for hardcoded secrets, and audits the manifest for export issues — then verifies findings on a real device.
+Thorfinn is an open-source security analysis tool for Android applications built for security engineers, bug bounty hunters who need to identify and exploit client side vulnerabilities in Android applications. It performs taint analysis on given sources and sinks via config rules, pattern matching rules for common misconfigurations, hardcoded secrets and manifest auditing for real permission issues.
 
 ## Why Thorfinn
 
-Many exploitable Android issues are not visible inside a single class. Intent data may enter through an exported Activity, pass through routers, services, and utility classes, and only become dangerous when it reaches a sink such as `startActivity()`, `WebView.loadUrl()`, `ContentResolver.openInputStream()`, or `sendBroadcast()` in a completely different class. Other issues — dynamically registered receivers with custom actions, overly broad FileProvider grants, hardcoded API keys, exported components without permission protection — require different detection techniques entirely.
-
-Thorfinn is built for that review problem. It combines taint analysis, pattern matching, secret scanning, and manifest auditing into a single pipeline, uses an LLM to determine whether each finding is actually exploitable, and proves it by generating and executing a proof-of-concept on the device.
+Many client side vulnerabilities in Android remain undiscovered because they involve complex cross-class flow and most taint analysis fails to understand android related propogation such as `startActivity()` since this is not a regular method call. 
+Similarly most manifest auditing tools only check for exported components and some random permission checks, thorfinn identifies real permission issues and misconfigurations in the manifest.
+In addition to this it also has the ability to perform pattern matching for common misconfigurations and hardcoded secrets.
+It triages every finding using LLM where LLM is fed with real vulnerabilities discovered in various android application and complete context of the flow, generates POCs, executes those on real device and collects the evidence for them if deemed as `TRUE POSTIVE` by LLM. Final report has all the details and with a little manual inspection real vulnerabilities can be discovered and exploited.
 
 ## How It Works
 
@@ -61,7 +62,7 @@ toolsConfig:
   llmApiKey: YOUR_API_KEY
   llmModel: gpt-4
   llmBaseUrl: https://api.openai.com/v1
-  taiEAgentEnabled: false    # flip to true if you want the LLM to explore the codebase on its own
+  taiEAgentEnabled: false    # flip to true if you reach input token limit in direct flow or else keep it false
 ```
 
 ## Docs
