@@ -1,0 +1,192 @@
+rules:
+  # ─────────────── String literal action rules ───────────────
+
+  # Rule 1: registerReceiver with inline IntentFilter constructor (string literal action)
+  - id: dynamic-receiver-inline-filter
+    patterns:
+      - pattern: |
+          $RECV = new $RECEIVER_CLASS(...);
+          ...
+          registerReceiver($RECV, new IntentFilter($ACTION), ...);
+      - metavariable-regex:
+          metavariable: $ACTION
+          regex: ^"(?!android\.intent\.action\.|com\.google\.).*"$
+    message: >
+      Dynamically registered BroadcastReceiver '$RECEIVER_CLASS' with custom action $ACTION.
+      Custom actions are externally triggerable — any app can send a broadcast matching this action.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: dynamic-receiver
+
+  # Rule 2: registerReceiver with IntentFilter constructed separately (string literal action)
+  - id: dynamic-receiver-separate-filter
+    patterns:
+      - pattern: |
+          $RECV = new $RECEIVER_CLASS(...);
+          ...
+          $FILTER = new IntentFilter($ACTION);
+          ...
+          registerReceiver($RECV, $FILTER, ...);
+      - metavariable-regex:
+          metavariable: $ACTION
+          regex: ^"(?!android\.intent\.action\.|com\.google\.).*"$
+    message: >
+      Dynamically registered BroadcastReceiver '$RECEIVER_CLASS' with custom action $ACTION via separate IntentFilter.
+      Custom actions are externally triggerable.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: dynamic-receiver
+
+  # Rule 3: IntentFilter with addAction() then registerReceiver (string literal action)
+  - id: dynamic-receiver-add-action
+    patterns:
+      - pattern: |
+          $FILTER.addAction($ACTION);
+          ...
+          registerReceiver($RECV, $FILTER, ...);
+      - metavariable-regex:
+          metavariable: $ACTION
+          regex: ^"(?!android\.intent\.action\.|com\.google\.).*"$
+    message: >
+      Dynamically registered BroadcastReceiver with custom action $ACTION via addAction().
+      Custom actions are externally triggerable.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: dynamic-receiver
+
+  # ─────────────── Variable-based action rules ───────────────
+  # These match when the action is passed as a variable/field reference, not a string literal.
+  # The LLM will resolve the variable value and determine if it's a custom or system action.
+
+  # Rule 4: Variable action with separate IntentFilter + receiver instantiation
+  - id: dynamic-receiver-variable-action-separate
+    patterns:
+      - pattern: |
+          $RECV = new $RECEIVER_CLASS(...);
+          ...
+          $FILTER = new IntentFilter($ACTION);
+          ...
+          registerReceiver($RECV, $FILTER, ...);
+      - metavariable-regex:
+          metavariable: $ACTION
+          regex: ^[A-Za-z_]
+    message: >
+      Dynamically registered BroadcastReceiver '$RECEIVER_CLASS' with variable-based action $ACTION.
+      Resolve the variable to determine if the action is custom or system.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: dynamic-receiver
+
+  # Rule 5: Variable action with inline IntentFilter + receiver instantiation
+  - id: dynamic-receiver-variable-action-inline
+    patterns:
+      - pattern: |
+          $RECV = new $RECEIVER_CLASS(...);
+          ...
+          registerReceiver($RECV, new IntentFilter($ACTION), ...);
+      - metavariable-regex:
+          metavariable: $ACTION
+          regex: ^[A-Za-z_]
+    message: >
+      Dynamically registered BroadcastReceiver '$RECEIVER_CLASS' with variable-based action $ACTION (inline filter).
+      Resolve the variable to determine if the action is custom or system.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: dynamic-receiver
+
+  # Rule 6: Variable action via addAction()
+  - id: dynamic-receiver-variable-add-action
+    patterns:
+      - pattern: |
+          $FILTER.addAction($ACTION);
+          ...
+          registerReceiver($RECV, $FILTER, ...);
+      - metavariable-regex:
+          metavariable: $ACTION
+          regex: ^[A-Za-z_]
+    message: >
+      Dynamically registered BroadcastReceiver with variable-based action $ACTION via addAction().
+      Resolve the variable to determine if the action is custom or system.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: dynamic-receiver
+
+  # ─────────────── Anonymous receiver + variable action rules ───────────────
+  # These match when the receiver is an anonymous BroadcastReceiver class.
+
+  # Rule 7: Anonymous receiver + separate filter + variable action
+  - id: dynamic-receiver-anon-variable-action-separate
+    patterns:
+      - pattern: |
+          $FILTER = new IntentFilter($ACTION);
+          ...
+          registerReceiver($RECV, $FILTER, ...);
+      - metavariable-regex:
+          metavariable: $ACTION
+          regex: ^[A-Za-z_]
+    message: >
+      Dynamically registered receiver with variable-based action $ACTION via separate IntentFilter.
+      Resolve the variable to determine if the action is custom or system.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: dynamic-receiver
+
+  # Rule 8: Anonymous receiver + separate filter + string literal action
+  - id: dynamic-receiver-anon-separate-filter
+    patterns:
+      - pattern: |
+          $FILTER = new IntentFilter($ACTION);
+          ...
+          registerReceiver($RECV, $FILTER, ...);
+      - metavariable-regex:
+          metavariable: $ACTION
+          regex: ^"(?!android\.intent\.action\.|com\.google\.).*"$
+    message: >
+      Dynamically registered receiver with custom action $ACTION via separate IntentFilter.
+      Custom actions are externally triggerable.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: dynamic-receiver
+
+  # ─────────────── Exported flag rules ───────────────
+
+  # Rule 7: registerReceiver with explicit RECEIVER_EXPORTED flag (value 2)
+  - id: dynamic-receiver-exported-flag
+    pattern: registerReceiver($RECV, $FILTER, 2)
+    message: >
+      BroadcastReceiver registered with RECEIVER_EXPORTED flag.
+      This receiver is explicitly exposed to external apps.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: dynamic-receiver
+
+  # Rule 8: registerReceiver with Context.RECEIVER_EXPORTED constant
+  - id: dynamic-receiver-exported-constant
+    pattern: registerReceiver($RECV, $FILTER, Context.RECEIVER_EXPORTED)
+    message: >
+      BroadcastReceiver registered with Context.RECEIVER_EXPORTED.
+      This receiver is explicitly exposed to external apps.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: dynamic-receiver
+

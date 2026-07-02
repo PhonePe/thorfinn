@@ -5,6 +5,8 @@ out/
 .kotlin
 *.iml
 .idea/
+.env/
+.cache/
 
 ### Maven ###
 target/
@@ -34,12 +36,10 @@ bin/
 ### Mac OS ###
 .DS_Store
 
-### Sensitive Config ###
-config/config.yml
-
 ### Generated Output ###
 resources/decompiled_apks/
 resources/apk/
 resources/taie_output/
 output/
 src/main/java/com/thorfinn/output/
+thorfinn_report.html

@@ -1,0 +1,8 @@
+toolsConfig:
+  decompilers:
+    - jadx
+    - apktool
+  analysisTools:
+    - pacdroid
+
+

@@ -1,0 +1,281 @@
+rules:
+  # ─────────────── Client-Side SQL Injection in Android ───────────────
+  # Detects when attacker-controlled input (from exported ContentProvider URI parameters,
+  # Intent extras, or other external sources) is concatenated into raw SQL queries
+  # executed by SQLiteDatabase.rawQuery(), execSQL(), or similar methods.
+  #
+  # In Android, client-side SQL injection occurs in EXPORTED ContentProviders where
+  # the query()/insert()/update()/delete() callbacks pass attacker-controlled
+  # selection/projection/sortOrder parameters directly into raw SQL.
+  # Impact: data exfiltration from other tables, auth bypass, or even file read via
+  # SQLite's readfile() or ATTACH DATABASE.
+
+  # ─────────────── rawQuery with string concatenation ───────────────
+
+  # Rule 1: rawQuery with string concatenation using +
+  - id: sql-injection-rawquery-concat
+    patterns:
+      - pattern: |
+          $DB.rawQuery($PREFIX + $INPUT + ..., ...);
+      - metavariable-type:
+          metavariable: $DB
+          types:
+            - android.database.sqlite.SQLiteDatabase
+            - SQLiteDatabase
+    message: >
+      Potential SQL injection: rawQuery() called with string concatenation.
+      If $INPUT comes from attacker-controlled sources (ContentProvider URI, Intent extras),
+      an attacker can inject arbitrary SQL.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: sql-injection
+
+  # Rule 2: rawQuery with string concatenation via StringBuilder
+  - id: sql-injection-rawquery-stringbuilder
+    patterns:
+      - pattern: |
+          $SB.append($INPUT);
+          ...
+          $DB.rawQuery($SB.toString(), ...);
+    message: >
+      Potential SQL injection: rawQuery() called with StringBuilder-constructed query
+      that appends external input $INPUT.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: sql-injection
+
+  # Rule 3: rawQuery with String.format
+  - id: sql-injection-rawquery-format
+    patterns:
+      - pattern: |
+          $DB.rawQuery(String.format(..., $INPUT, ...), ...);
+    message: >
+      Potential SQL injection: rawQuery() called with String.format() containing
+      external input $INPUT.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: sql-injection
+
+  # ─────────────── execSQL with string concatenation ───────────────
+
+  # Rule 4: execSQL with string concatenation
+  - id: sql-injection-execsql-concat
+    patterns:
+      - pattern: |
+          $DB.execSQL($PREFIX + $INPUT + ...);
+      - metavariable-type:
+          metavariable: $DB
+          types:
+            - android.database.sqlite.SQLiteDatabase
+            - SQLiteDatabase
+    message: >
+      Potential SQL injection: execSQL() called with string concatenation.
+      If $INPUT is attacker-controlled, arbitrary SQL statements can be executed.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: sql-injection
+
+  # Rule 5: execSQL with String.format
+  - id: sql-injection-execsql-format
+    patterns:
+      - pattern: |
+          $DB.execSQL(String.format(..., $INPUT, ...));
+    message: >
+      Potential SQL injection: execSQL() called with String.format() containing
+      external input.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: sql-injection
+
+  # ─────────────── ContentProvider query() with unsanitized selection ───────────────
+  # These detect when a ContentProvider's query() method passes the selection parameter
+  # directly to SQLiteDatabase without using selectionArgs for parameterization.
+
+  # Rule 6: ContentProvider query passing selection directly to rawQuery
+  - id: sql-injection-provider-query-rawquery
+    patterns:
+      - pattern: |
+          public Cursor query(..., String $SELECTION, ...) {
+            ...
+            $DB.rawQuery(... + $SELECTION + ..., ...);
+            ...
+          }
+    message: >
+      SQL injection in ContentProvider: the selection parameter from query() is
+      concatenated into rawQuery() without parameterization. If this provider is
+      exported, an attacker can inject arbitrary SQL via the selection argument.
+    languages: [java]
+    severity: ERROR
+    metadata:
+      category: security
+      subcategory: sql-injection
+
+  # Rule 7: ContentProvider query passing projection directly to rawQuery
+  - id: sql-injection-provider-projection
+    patterns:
+      - pattern: |
+          public Cursor query(..., String[] $PROJECTION, ...) {
+            ...
+            $DB.rawQuery(... + $PROJECTION + ..., ...);
+            ...
+          }
+    message: >
+      SQL injection in ContentProvider: the projection parameter from query() is
+      concatenated into rawQuery(). If this provider is exported, an attacker can
+      inject arbitrary SQL via the projection columns.
+    languages: [java]
+    severity: ERROR
+    metadata:
+      category: security
+      subcategory: sql-injection
+
+  # Rule 8: ContentProvider query passing sortOrder directly
+  - id: sql-injection-provider-sortorder
+    patterns:
+      - pattern: |
+          public Cursor query(..., String $SORT_ORDER) {
+            ...
+            $DB.rawQuery(... + $SORT_ORDER + ..., ...);
+            ...
+          }
+    message: >
+      SQL injection in ContentProvider: the sortOrder parameter from query() is
+      concatenated into rawQuery(). If this provider is exported, an attacker can
+      inject arbitrary SQL via the sort order argument.
+    languages: [java]
+    severity: ERROR
+    metadata:
+      category: security
+      subcategory: sql-injection
+
+  # ─────────────── Generic dangerous patterns ───────────────
+
+  # Rule 9: SQLiteQueryBuilder with unsanitized input in selection
+  - id: sql-injection-querybuilder-selection
+    patterns:
+      - pattern: |
+          $QB.appendWhere($INPUT);
+      - pattern-not: |
+          $QB.appendWhere("...");
+    message: >
+      Potential SQL injection: SQLiteQueryBuilder.appendWhere() called with
+      non-literal input $INPUT. If this value comes from an attacker, they can
+      inject SQL into the WHERE clause.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: sql-injection
+
+  # Rule 10: compileStatement with concatenation
+  - id: sql-injection-compile-statement
+    patterns:
+      - pattern: |
+          $DB.compileStatement($PREFIX + $INPUT + ...);
+    message: >
+      Potential SQL injection: compileStatement() with string concatenation.
+      If $INPUT is attacker-controlled, arbitrary SQL can be compiled and executed.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: sql-injection
+
+  # ─────────────── Intent extras → SQL injection ───────────────
+  # Detects when data from Intent extras flows into raw SQL queries.
+  # This covers exported Activities/Services that receive attacker-controlled
+  # data and concatenate it into SQL without parameterization.
+
+  # Rule 11: Intent getStringExtra → rawQuery concatenation
+  - id: sql-injection-intent-extra-rawquery
+    patterns:
+      - pattern: |
+          $VAR = $INTENT.getStringExtra(...);
+          ...
+          $DB.rawQuery(... + $VAR + ..., ...);
+    message: >
+      Potential SQL injection: Intent string extra flows into rawQuery() via concatenation.
+      If this component is exported, an attacker can inject arbitrary SQL via Intent extras.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: sql-injection
+
+  # Rule 12: Intent getData → rawQuery concatenation
+  - id: sql-injection-intent-data-rawquery
+    patterns:
+      - pattern: |
+          $VAR = $INTENT.getData();
+          ...
+          $DB.rawQuery(... + $VAR + ..., ...);
+    message: >
+      Potential SQL injection: Intent URI data flows into rawQuery() via concatenation.
+      If this component has a deep link intent-filter, an attacker can inject SQL via the URI.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: sql-injection
+
+  # Rule 13: Uri getQueryParameter → rawQuery concatenation
+  - id: sql-injection-uri-param-rawquery
+    patterns:
+      - pattern: |
+          $VAR = $URI.getQueryParameter(...);
+          ...
+          $DB.rawQuery(... + $VAR + ..., ...);
+    message: >
+      Potential SQL injection: URI query parameter flows into rawQuery() via concatenation.
+      If the URI comes from an external source (deep link, ContentProvider), an attacker
+      can inject arbitrary SQL.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: sql-injection
+
+  # Rule 14: Intent getStringExtra → execSQL concatenation
+  - id: sql-injection-intent-extra-execsql
+    patterns:
+      - pattern: |
+          $VAR = $INTENT.getStringExtra(...);
+          ...
+          $DB.execSQL(... + $VAR + ...);
+    message: >
+      Potential SQL injection: Intent string extra flows into execSQL() via concatenation.
+      If this component is exported, an attacker can execute arbitrary SQL statements.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: sql-injection
+
+  # Rule 15: Uri getLastPathSegment → rawQuery concatenation
+  - id: sql-injection-uri-path-rawquery
+    patterns:
+      - pattern: |
+          $VAR = $URI.getLastPathSegment();
+          ...
+          $DB.rawQuery(... + $VAR + ..., ...);
+    message: >
+      Potential SQL injection: URI path segment flows into rawQuery() via concatenation.
+      If the URI comes from a ContentProvider or deep link, an attacker can inject SQL
+      via URL-encoded path segments.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: sql-injection
+
+
