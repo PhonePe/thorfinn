@@ -23,6 +23,7 @@ import com.thorfinn.tools.TruffleHog;
 import com.thorfinn.tools.Tools;
 import com.thorfinn.utils.CommandRunner;
 import com.thorfinn.utils.PathUtils;
+import com.thorfinn.utils.VersionInfo;
 import com.thorfinn.verification.AdbVerifier;
 import com.thorfinn.verification.PocApprovalMode;
 import lombok.extern.slf4j.Slf4j;
@@ -79,7 +80,8 @@ public class  Orchestrator {
     }
 
     private void printBanner() {
-        log.info(BANNER);
+        System.out.println(BANNER);
+        System.out.println("            Version: " + VersionInfo.getVersion());
     }
 
     private void setupAndExtractApk(Config config) throws Exception {

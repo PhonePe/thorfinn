@@ -36,6 +36,10 @@
               <transformers>
                 <transformer>
                   <mainClass>com.thorfinn.Main</mainClass>
+                  <manifestEntries>
+                    <Implementation-Title>Thorfinn</Implementation-Title>
+                    <Implementation-Version>${project.version}</Implementation-Version>
+                  </manifestEntries>
                 </transformer>
                 <transformer />
               </transformers>

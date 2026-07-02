@@ -1,0 +1,109 @@
+name: Thorfinn Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      releaseType:
+        description: What kind of release is this?
+        required: true
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+
+permissions:
+  contents: write
+
+concurrency:
+  group: thorfinn-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10   # v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Compute release tag
+        id: version
+        env:
+          RELEASE_TYPE: ${{ inputs.releaseType }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          latest_tag="$(git tag --list 'v*' --sort=-version:refname | head -n1)"
+          if [[ -z "$latest_tag" ]]; then
+            latest_tag="v0.0.0"
+          fi
+
+          version="${latest_tag#v}"
+          IFS='.' read -r major minor patch <<< "$version"
+
+          case "$RELEASE_TYPE" in
+            major) major=$((major + 1)); minor=0; patch=0 ;;
+            minor) minor=$((minor + 1)); patch=0 ;;
+            patch) patch=$((patch + 1)) ;;
+            *) echo "Unsupported release type: $RELEASE_TYPE" >&2; exit 1 ;;
+          esac
+
+          echo "new_version=v${major}.${minor}.${patch}" >> "$GITHUB_OUTPUT"
+          echo "new_version_number=${major}.${minor}.${patch}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up JDK 17 (Temurin)
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Bump pom.xml version
+        env:
+          NEW_VERSION_NUMBER: ${{ steps.version.outputs.new_version_number }}
+        run: |
+          set -euo pipefail
+          mvn -B -ntp versions:set -DnewVersion="${NEW_VERSION_NUMBER}" -DgenerateBackupPoms=false
+
+      - name: Build fat JAR
+        env:
+          NEW_VERSION: ${{ steps.version.outputs.new_version }}
+        run: |
+          set -euo pipefail
+          mvn -B -ntp clean package -DskipTests
+          cp target/Thorfinn.jar "target/Thorfinn-${NEW_VERSION}.jar"
+
+      - name: Commit version bump and tag release
+        id: commit
+        env:
+          NEW_VERSION: ${{ steps.version.outputs.new_version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add pom.xml
+          git commit -m "chore: release ${NEW_VERSION}"
+          git push origin HEAD:main
+
+          echo "release_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda   # v2
+        with:
+          tag_name: ${{ steps.version.outputs.new_version }}
+          name: ${{ steps.version.outputs.new_version }}
+          target_commitish: ${{ steps.commit.outputs.release_sha }}
+          generate_release_notes: true
+          make_latest: true
+          files: |
+            target/Thorfinn.jar
+            target/Thorfinn-${{ steps.version.outputs.new_version }}.jar

@@ -1,6 +1,7 @@
 package com.thorfinn;
 
 import com.thorfinn.orchestrator.Orchestrator;
+import com.thorfinn.utils.VersionInfo;
 import com.thorfinn.verification.PocApprovalMode;
 
 public class Main {
@@ -11,6 +12,10 @@ public class Main {
         if (args.length < 1 || "-h".equals(args[0]) || "--help".equals(args[0])) {
             printHelp();
             System.exit(args.length < 1 ? 1 : 0);
+        }
+        if ("-v".equals(args[0]) || "--version".equals(args[0])) {
+            System.out.println("Thorfinn " + VersionInfo.getVersion());
+            System.exit(0);
         }
         String packageName = args[0];
         int timeLimit = DEFAULT_TIME_LIMIT;
@@ -46,7 +51,7 @@ public class Main {
     private static void printHelp() {
         System.out.println("""
                 
-                Thorfinn — Automated Android Client-Side Security Scanner
+                Thorfinn %s — Automated Android Client-Side Security Scanner
                 
                 Usage:
                   java -jar Thorfinn.jar <package-name> --config <path> [options]
@@ -59,6 +64,7 @@ public class Main {
                   -t, --time-limit <seconds>  Time limit for CPG/taint analysis (default: 300)
                   -y, --auto-approve          Auto-approve all LLM-generated POC commands without prompting
                   -s, --skip-verify           Skip execution of all LLM-generated POC commands
+                  -v, --version               Print the Thorfinn version and exit
                   -h, --help                  Show this help message
                 
                 Examples:
@@ -66,6 +72,6 @@ public class Main {
                   java -jar Thorfinn.jar com.example.app -c ./config/config.yml --time-limit 600
                   java -jar Thorfinn.jar com.example.app -c ./config/config.yml --auto-approve
                   java -jar Thorfinn.jar com.example.app -c ./config/config.yml --skip-verify
-                """);
+                """.formatted(VersionInfo.getVersion()));
     }
 }
