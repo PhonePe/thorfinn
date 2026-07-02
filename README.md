@@ -68,7 +68,7 @@ flowchart TD
 ## Quick Start
 
 ```bash
-git clone https://github.com/PhonePe/Thorfinn.git
+git clone https://github.com/PhonePe/Thorfinn.git --recurse-submodules
 cd Thorfinn
 ./setup.sh
 
