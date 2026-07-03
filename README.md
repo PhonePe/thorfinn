@@ -4,7 +4,30 @@
   <img src="assets/logo.png" width="600">
 </p>
 
-**Automated Android Client-Side Security Scanner**
+<div align="center">
+
+### Automated Android Client-Side Security Scanner
+
+<br/>
+
+[![License](https://img.shields.io/badge/License-Apache%202.0-FFFFFF?style=for-the-badge&labelColor=555555)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/PhonePe/thorfinn?style=for-the-badge&logo=github&logoColor=FFFFFF&color=FFFFFF&labelColor=555555&cacheSeconds=300)](https://github.com/PhonePe/thorfinn/stargazers)
+![Open issues](https://img.shields.io/github/issues/PhonePe/thorfinn?style=for-the-badge&color=FFFFFF&labelColor=555555)
+![PRs welcome](https://img.shields.io/badge/PRs-welcome-FFFFFF?style=for-the-badge&labelColor=555555)
+
+<br/>
+
+[![Join Discord](assets/join-discord.svg)](https://discord.com/invite/PrTJ5Hubfm)
+&nbsp;
+[![Read the Docs](assets/read-the-docs.svg)](https://phonepe.github.io/thorfinn/)
+
+<br/>
+
+**[Quick Start](#quick-start)** · **[Why Thorfinn](#why-thorfinn)** · **[Vulnerabilities Identified](#Vulnerabilities-Identified)** · **[How It Works](#how-it-works)** · **[Docs](https://phonepe.github.io/thorfinn/)**
+
+<br/>
+
+</div>
 
 Thorfinn is an open-source security analysis tool for Android applications built for security engineers, bug bounty hunters who need to identify and exploit client side vulnerabilities in Android applications. It is a plug'n play tool which takes package name of APK installed on device as input and identifies vulnerabilities statically and verifies them using LLM and dynamic analaysis on a real device. It performs taint analysis on given sources and sinks via config rules, pattern matching rules for common misconfigurations, hardcoded secrets and manifest auditing for real permission issues.
 
