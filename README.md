@@ -6,7 +6,7 @@
 
 <div align="center">
 
-### Automated Android Client-Side Security Scanner
+### Drop in an APK. Find client-side vulnerabilities. Validate exploits with AI.
 
 <br/>
 
@@ -29,25 +29,16 @@
 
 </div>
 
-Thorfinn is an open-source security analysis tool for Android applications built for security engineers, bug bounty hunters who need to identify and exploit client side vulnerabilities in Android applications. It is a plug'n play tool which takes package name of APK installed on device as input and identifies vulnerabilities statically and verifies them using LLM and dynamic analaysis on a real device. It performs taint analysis on given sources and sinks via config rules, pattern matching rules for common misconfigurations, hardcoded secrets and manifest auditing for real permission issues.
+Thorfinn is an open-source Android APK security analysis tool for security engineers and bug bounty hunters. Provide the package name of an app installed on a connected device or emulator, and Thorfinn analyzes it for client-side vulnerabilities, then validates high-confidence findings through LLM-assisted dynamic testing.
 
-## Key Features
+Unlike scanners that report isolated risky patterns or rely on generic dynamic payloads, Thorfinn traces attacker-controlled data across classes and Android-specific flows such as intents, extras, deep links, `startActivity()`, and component transitions. It supports configurable sources and sinks, pattern-based checks for common misconfigurations and hardcoded secrets, and Manifest auditing for meaningful permission and component exposure issues.
 
-- Plug'n play tool, give package name of APK installed on device, and it will do the rest
-- Real-time verification of findings using LLM and dynamic analysis on a real device
-- Supports Tae-i, SemGrep, TruffleHog, and custom manifest analysis.
-- Supports addition of new tools
-
-## Why Thorfinn
-
-Many client side vulnerabilities in Android remain undiscovered because they involve complex cross-class flow and most taint analysis fails to understand android related propogation such as `startActivity()` since this is not a regular method call.
-Similarly most manifest auditing tools only check for exported components and some random permission checks, thorfinn identifies real permission issues and misconfigurations in the manifest.
-In addition to this it also has the ability to perform pattern matching for common misconfigurations and hardcoded secrets.
-It triages every finding using LLM where LLM is fed with real vulnerabilities discovered in various android application and complete context of the flow, generates POCs, executes those on real device and collects the evidence for them if deemed as `TRUE POSTIVE` by LLM. Final report has all the details and with a little manual inspection real vulnerabilities can be discovered and exploited.
+For high-confidence findings, Thorfinn uses the complete taint path and application context to triage the issue, generate targeted proof-of-concept payloads, execute them on the connected device or emulator, and collect runtime evidence. The final report includes the vulnerable flow, affected components, payloads, and validation evidence needed to verify and reproduce real client-side vulnerabilities.
 
 ## Demo
 
 ![Demo](./assets/demo.gif)
+
 
 ## Vulnerabilities Identified
 
@@ -69,24 +60,6 @@ It triages every finding using LLM where LLM is fed with real vulnerabilities di
 - Component Declaration Typos
 - Ecosystem Permission Mistakes
 - ContentProvider readPermission / writePermission Gaps
-
-## How It Works
-
-```mermaid
-flowchart TD
-    A["📱 Pull APK from Device"] --> B["💻 Decompile (JADX / APKTool)"]
-    B --> C["📋 Manifest Analysis"]
-    C --> D["🔍 Run Tools"]
-    
-    D --> E1["Tai-e"] & E2["Semgrep"] & E3["TruffleHog"] & E4["PermissionChecker"]
-    
-    E1 & E2 & E3 & E4 --> F["🤖 LLM Triage"]
-    
-    F -->|True Positive| G["⚡ Generate & Verify POC"]
-    F -->|False Positive| X["❌ Dropped"]
-    
-    G --> H["📊 HTML Report"]
-```
 
 ## Quick Start
 
@@ -168,33 +141,24 @@ java -jar target/Thorfinn.jar com.target.app --config config/config.yml --skip-v
 ```
 
 
-## Example Config
+## How It Works
 
-Create a `config.yml` and pass it with `-c/--config`. Set `pathConfigs.baseDirectory` to the absolute path of your Thorfinn checkout, and drop your LLM API key in `toolsConfig.llmApiKey`:
+```mermaid
+flowchart TD
+    A["📱 Pull APK from Device"] --> B["💻 Decompile (JADX / APKTool)"]
+    B --> C["📋 Manifest Analysis"]
+    C --> D["🔍 Run Tools"]
 
-```yaml
-toolsConfig:
-  decompilers: jadx
-  analysisTools:
-    - taie
-    - semgrep
-    - permissionChecker
-    - truffleHog
-  llmApiKey: YOUR_API_KEY
-  llmModel: gpt-4
-  llmBaseUrl: https://api.openai.com
-  taiEAgentEnabled: false                    # flip to true if you reach input token limit in direct flow
-  taiEAgentMaxToolResponsePercentage: 30
+    D --> E1["Tai-e"] & E2["Semgrep"] & E3["TruffleHog"] & E4["PermissionChecker"]
 
-pathConfigs:
-  baseDirectory: REPLACE_BASE_DIRECTORY      # absolute path to your Thorfinn checkout
-  decompiledApkPath: /resources/decompiled_apks/
-  taiePath: /resources/tools/tai-e-all-0.5.4-SNAPSHOT.jar
-  androidPlatformsPath: /resources/android-platforms/
-  taieOutputPath: /resources/taie_output/
-  taintConfigPath: /config/taint_config.yml
-  permissionCheckerPath: /resources/tools/permissionChecker.py
-  semgrepRulesPath: /resources/tools/semgrep-rules/
-  outputPath: /resources/output/
+    E1 & E2 & E3 & E4 --> F["🤖 LLM Triage"]
+
+    F -->|True Positive| G["⚡ Generate & Verify POC"]
+    F -->|False Positive| X["❌ Dropped"]
+
+    G --> H["📊 HTML Report"]
 ```
 
+### Documentation
+
+To know more about Thorfinn and it's features, you can read our detailed documentation [here](https://phonepe.github.io/thorfinn/index.html).
