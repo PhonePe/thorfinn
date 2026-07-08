@@ -43,3 +43,4 @@ resources/taie_output/
 output/
 src/main/java/com/thorfinn/output/
 thorfinn_report.html
+thorfinn_report.json
