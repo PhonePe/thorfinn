@@ -134,8 +134,7 @@ Options:
   -h, --help                  Show this help message
 ```
 
-The `--config` flag is **required** - Thorfinn no longer falls back to a default config location. Pass the path to your `config.yml` (relative paths are resolved against the current working directory).
-
+Thorfinn requires a configuration file for LLM settings, taint rules, tool paths, and verification options. Pass it using the --config flag; relative paths are resolved from the current working directory.
 
 
 ## POC Verification (LLM-generated commands)
