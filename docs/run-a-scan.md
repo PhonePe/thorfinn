@@ -20,7 +20,7 @@ Thorfinn requires a configuration file for LLM settings, taint rules, tool paths
 
 ### Configuration
 
-After setup, create a config `config.yml`:
+After setup, edit the config at `config/config.yml`:
 
 ```yaml
 toolsConfig:
