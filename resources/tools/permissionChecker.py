@@ -23,7 +23,7 @@ from typing import Optional
 ANDROID_NS = "http://schemas.android.com/apk/res/android"
 COMPONENT_TAGS = {"activity", "activity-alias", "service", "receiver", "provider"}
 
-# System/vendor permission prefixes — these are not custom app permissions
+# System/vendor permission prefixes - these are not custom app permissions
 # and should be skipped during permission misconfiguration checks
 SYSTEM_PERMISSION_PREFIXES = (
     "android.permission.",
@@ -310,7 +310,7 @@ def check_permission_name_typos(manifest: ManifestData) -> list[Finding]:
             matched = manifest.declared_permissions.get(close[0], {})
             matched_level = matched.get("protectionLevel", "not set")
             close_detail = (
-                f" This looks like a typo — similar declared permission(s): {close}. "
+                f" This looks like a typo - similar declared permission(s): {close}. "
                 f"The declared permission '{close[0]}' has protectionLevel='{matched_level}', "
                 f"but since '{perm}' is not declared, it defaults to normal."
             )
@@ -384,7 +384,7 @@ def check_component_attribute_typos(manifest: ManifestData) -> list[Finding]:
                     attack_scenario=(
                         f"Any third-party app can directly access {comp['tag']} "
                         f"'{comp['name']}' because the permission attribute is ignored by "
-                        f"Android — the component is effectively unprotected."
+                        f"Android - the component is effectively unprotected."
                     ),
                 ))
     return findings
@@ -475,7 +475,7 @@ def check_ecosystem_permission_issues(
             )
         elif device_permissions is None:
             on_device_note = (
-                " (Could not verify against device — adb was unavailable. "
+                " (Could not verify against device - adb was unavailable. "
                 "Run with a device connected to confirm.)"
             )
 
@@ -509,12 +509,12 @@ def check_ecosystem_permission_issues(
                     f"declare it with <permission> and identical protectionLevel."
                 ),
                 attack_scenario=(
-                    f"Attack Scenario 1 — Declare & Access: If the declaring app is not "
+                    f"Attack Scenario 1 - Declare & Access: If the declaring app is not "
                     f"installed, an attacker app can simply add "
                     f'<uses-permission android:name="{perm}" /> and access '
                     f"{comp['tag']} '{comp['name']}' directly since the permission is "
                     f"treated as normal.\n"
-                    f"Attack Scenario 2 — Hijack the Permission: The attacker app declares "
+                    f"Attack Scenario 2 - Hijack the Permission: The attacker app declares "
                     f"the permission itself with protectionLevel='normal': "
                     f'<permission android:name="{perm}" '
                     f'android:protectionLevel="normal" />, then requests it, effectively '
@@ -592,7 +592,7 @@ def check_provider_permission_gaps(manifest: ManifestData) -> list[Finding]:
                 severity=Severity.HIGH,
                 title=(
                     f"Provider '{comp['name']}' has readPermission but no writePermission "
-                    f"— write operations and openFile(\"w\") are unprotected"
+                    f"- write operations and openFile(\"w\") are unprotected"
                 ),
                 description=(
                     f"The exported <provider> '{comp['name']}' declares "
@@ -602,7 +602,7 @@ def check_provider_permission_gaps(manifest: ManifestData) -> list[Finding]:
                     f"guards query() calls and openFile() with mode \"r\". Without a "
                     f"writePermission or a fallback permission attribute:\n"
                     f"  1) Write operations (insert, update, delete) are completely unprotected.\n"
-                    f"  2) openFile(uri, \"w\") requires NO permission — Android checks "
+                    f"  2) openFile(uri, \"w\") requires NO permission - Android checks "
                     f"writePermission for \"w\" mode, which is absent.\n"
                     f"Critically, the provider's openFile() implementation may ignore the mode "
                     f"and return a read-only file descriptor. So an attacker calling "
@@ -618,15 +618,15 @@ def check_provider_permission_gaps(manifest: ManifestData) -> list[Finding]:
                     f"android:permission to cover both."
                 ),
                 attack_scenario=(
-                    f"Attack 1 — Unprotected write operations:\n"
+                    f"Attack 1 - Unprotected write operations:\n"
                     f"  ContentResolver cr = getContentResolver();\n"
                     f"  cr.insert(Uri.parse(\"content://<authority>/path\"), maliciousValues);\n"
                     f"  cr.delete(Uri.parse(\"content://<authority>/path\"), null, null);\n\n"
-                    f"Attack 2 — openFile mode bypass (read files without readPermission):\n"
+                    f"Attack 2 - openFile mode bypass (read files without readPermission):\n"
                     f"  Uri uri = Uri.parse(\"content://<authority>/data/data/com.victim/shared_prefs/secrets.xml\");\n"
                     f"  ParcelFileDescriptor pfd = getContentResolver().openFile(uri, \"w\", null);\n"
                     f"  InputStream is = new FileInputStream(pfd.getFileDescriptor());\n"
-                    f"  // Read the file contents — provider returns read-only fd despite \"w\" mode"
+                    f"  // Read the file contents - provider returns read-only fd despite \"w\" mode"
                 ),
             ))
 
@@ -637,7 +637,7 @@ def check_provider_permission_gaps(manifest: ManifestData) -> list[Finding]:
                 severity=Severity.HIGH,
                 title=(
                     f"Provider '{comp['name']}' has writePermission but no readPermission "
-                    f"— read operations and openFile(\"r\") are unprotected"
+                    f"- read operations and openFile(\"r\") are unprotected"
                 ),
                 description=(
                     f"The exported <provider> '{comp['name']}' declares "
@@ -646,8 +646,8 @@ def check_provider_permission_gaps(manifest: ManifestData) -> list[Finding]:
                     f"In Android's ContentProvider permission model, writePermission only "
                     f"guards insert/update/delete calls and openFile() with mode \"w\". "
                     f"Without a readPermission or a fallback permission attribute:\n"
-                    f"  1) query() is completely unprotected — any app can read data.\n"
-                    f"  2) openFile(uri, \"r\") requires NO permission — Android checks "
+                    f"  1) query() is completely unprotected - any app can read data.\n"
+                    f"  2) openFile(uri, \"r\") requires NO permission - Android checks "
                     f"readPermission for \"r\" mode, which is absent."
                 ),
                 affected_component=f"provider {comp['name']}",
@@ -659,12 +659,12 @@ def check_provider_permission_gaps(manifest: ManifestData) -> list[Finding]:
                     f"android:permission to cover both."
                 ),
                 attack_scenario=(
-                    f"Attack 1 — Unprotected read operations:\n"
+                    f"Attack 1 - Unprotected read operations:\n"
                     f"  ContentResolver cr = getContentResolver();\n"
                     f"  Cursor c = cr.query(Uri.parse(\"content://<authority>/path\"), "
                     f"null, null, null, null);\n"
                     f"  // Iterate cursor to read all exposed data\n\n"
-                    f"Attack 2 — openFile read access without any permission:\n"
+                    f"Attack 2 - openFile read access without any permission:\n"
                     f"  Uri uri = Uri.parse(\"content://<authority>/data/data/com.victim/files/sensitive.db\");\n"
                     f"  ParcelFileDescriptor pfd = getContentResolver().openFile(uri, \"r\", null);\n"
                     f"  InputStream is = new FileInputStream(pfd.getFileDescriptor());\n"
@@ -684,7 +684,7 @@ def check_provider_permission_gaps(manifest: ManifestData) -> list[Finding]:
                     check="Provider Permission Gap",
                     severity=Severity.HIGH,
                     title=(
-                        f"Provider '{comp['name']}' — readPermission is signature-level but "
+                        f"Provider '{comp['name']}' - readPermission is signature-level but "
                         f"openFile(\"w\") only requires weak fallback permission"
                     ),
                     description=(
@@ -696,13 +696,13 @@ def check_provider_permission_gaps(manifest: ManifestData) -> list[Finding]:
                         f"  No android:writePermission is set.\n\n"
                         f"For file operations, Android checks permissions based on the caller's "
                         f"requested mode: openFile(uri, \"r\") checks readPermission (signature), "
-                        f"but openFile(uri, \"w\") checks writePermission — which is absent, so "
+                        f"but openFile(uri, \"w\") checks writePermission - which is absent, so "
                         f"it falls back to android:permission (\"{base_perm}\", which is "
                         f"protectionLevel={base_level or 'normal'}).\n\n"
                         f"The provider's openFile() implementation may ignore the mode parameter "
                         f"and return a read-only file descriptor regardless. So an attacker "
                         f"holding only \"{base_perm}\" (a normal/weak permission) can call "
-                        f"openFile(uri, \"w\") and still read files — completely bypassing the "
+                        f"openFile(uri, \"w\") and still read files - completely bypassing the "
                         f"signature-level readPermission."
                     ),
                     affected_component=f"provider {comp['name']}",
@@ -720,7 +720,7 @@ def check_provider_permission_gaps(manifest: ManifestData) -> list[Finding]:
                         f"it is granted automatically.\n\n"
                         f"Exploit code:\n"
                         f"  Uri uri = Uri.parse(\"content://<authority>/data/data/com.victim/shared_prefs/secrets.xml\");\n"
-                        f"  // Request \"w\" mode — Android only checks fallback permission (weak)\n"
+                        f"  // Request \"w\" mode - Android only checks fallback permission (weak)\n"
                         f"  ParcelFileDescriptor pfd = getContentResolver().openFile(uri, \"w\", null);\n"
                         f"  // Provider ignores mode, returns read-only fd\n"
                         f"  InputStream is = new FileInputStream(pfd.getFileDescriptor());\n"
@@ -741,7 +741,7 @@ def check_provider_permission_gaps(manifest: ManifestData) -> list[Finding]:
                     check="Provider Permission Gap",
                     severity=Severity.HIGH,
                     title=(
-                        f"Provider '{comp['name']}' — writePermission is signature-level but "
+                        f"Provider '{comp['name']}' - writePermission is signature-level but "
                         f"openFile(\"r\") only requires weak fallback permission"
                     ),
                     description=(
@@ -753,7 +753,7 @@ def check_provider_permission_gaps(manifest: ManifestData) -> list[Finding]:
                         f"  No android:readPermission is set.\n\n"
                         f"For file operations, Android checks permissions based on the caller's "
                         f"requested mode: openFile(uri, \"w\") checks writePermission (signature), "
-                        f"but openFile(uri, \"r\") checks readPermission — which is absent, so "
+                        f"but openFile(uri, \"r\") checks readPermission - which is absent, so "
                         f"it falls back to android:permission (\"{base_perm}\", which is "
                         f"protectionLevel={base_level or 'normal'}).\n\n"
                         f"An attacker holding only \"{base_perm}\" (a normal/weak permission) "

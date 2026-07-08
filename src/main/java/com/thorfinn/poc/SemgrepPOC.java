@@ -35,18 +35,18 @@ public class SemgrepPOC implements poc {
             Determine if the action used in the IntentFilter is a CUSTOM action or a standard Android system action.
             If it is a custom action, generate a POC to invoke it.
             
-            IMPORTANT — VARIABLE RESOLUTION:
+            IMPORTANT - VARIABLE RESOLUTION:
             - The action may be provided as a string literal (e.g., "com.example.MY_ACTION") or as a variable/field name (e.g., GET_FLAG, MY_ACTION_CONSTANT).
             - If the action is a variable, you MUST look at the source code to find where that variable is defined and resolve it to its actual string value.
             - For example, if the code has `public static String GET_FLAG = "io.hextree.broadcast.GET_FLAG"` and the IntentFilter uses `new IntentFilter(GET_FLAG)`, the actual action is "io.hextree.broadcast.GET_FLAG".
-            - Always use the resolved string value in your verdict and POC — never use the variable name.
+            - Always use the resolved string value in your verdict and POC - never use the variable name.
             
             KEY RULES:
             - If the action is a custom action (i.e., NOT a standard system broadcast), it is a TRUE POSITIVE.
             - System action prefixes to treat as FALSE POSITIVE: android.intent.action.*, android.net.*, android.media.*, android.bluetooth.*, android.hardware.*, android.app.action.*, android.os.action.*, android.provider.*, android.telephony.*, android.nfc.*, android.appwidget.*, android.accounts.*, android.location.*, android.security.*, com.google.*, com.android.*, androidx.*
             - If the action is a standard Android system action (e.g., android.intent.action.BOOT_COMPLETED, android.intent.action.BATTERY_LOW, etc.), it is a FALSE POSITIVE.
             - A custom action means any external app can craft and send a broadcast with that action, making the receiver reachable.
-            - Even if the onReceive method does NOT contain a dangerous source-sink flow, a custom action receiver is STILL a true positive — the receiver is externally invocable and that alone is a security concern.
+            - Even if the onReceive method does NOT contain a dangerous source-sink flow, a custom action receiver is STILL a true positive - the receiver is externally invocable and that alone is a security concern.
             - You should still review onReceive to note what it does, but do NOT mark it as false positive just because there is no obvious dangerous sink.
             - If RECEIVER_NOT_EXPORTED (value 4) flag is explicitly used, it is a FALSE POSITIVE.
             - If a permission is required to send to this receiver (3-arg registerReceiver with permission string), it is a FALSE POSITIVE.
@@ -55,7 +55,7 @@ public class SemgrepPOC implements poc {
             - Generate a single adb command to send a broadcast with the custom action.
             - Format: adb shell am broadcast -a <custom_action>
             - Extract the exact action string from the code and use it in the command.
-            - Do NOT add extras, flags, or anything else — just the action.
+            - Do NOT add extras, flags, or anything else - just the action.
             - Example: adb shell am broadcast -a com.example.MY_CUSTOM_ACTION
             
             RESPONSE FORMAT:
@@ -70,7 +70,7 @@ public class SemgrepPOC implements poc {
             (The single adb broadcast command if TRUE_POSITIVE, write "N/A" if FALSE_POSITIVE)
             
             === ANALYSIS ===
-            (Your detailed reasoning — note whether the action is custom or system, and briefly describe what onReceive does)
+            (Your detailed reasoning - note whether the action is custom or system, and briefly describe what onReceive does)
             """;
 
     private static final String SQL_INJECTION_SYSTEM_PROMPT = """
@@ -85,31 +85,31 @@ public class SemgrepPOC implements poc {
             UNDERSTANDING CLIENT-SIDE SQL INJECTION IN ANDROID:
             - Android apps use SQLite databases locally. SQL injection occurs when attacker-controlled input
               is concatenated into raw SQL queries without parameterization.
-            - There are MULTIPLE attack surfaces — not just ContentProviders:
+            - There are MULTIPLE attack surfaces - not just ContentProviders:
             
-            ATTACK SURFACE 1 — EXPORTED ContentProviders:
+            ATTACK SURFACE 1 - EXPORTED ContentProviders:
             - When a ContentProvider is exported, external apps can call query()/insert()/update()/delete(),
               providing attacker-controlled: projection, selection, sortOrder, URI path segments.
             - selectionArgs are parameterized (safe), but selection/projection/sortOrder are often concatenated raw.
             
-            ATTACK SURFACE 2 — EXPORTED Activities/Services receiving Intent extras:
+            ATTACK SURFACE 2 - EXPORTED Activities/Services receiving Intent extras:
             - An exported Activity or Service receives attacker-controlled data via Intent extras
               (getStringExtra, getIntExtra, getData, etc.) which flows into raw SQL queries.
             - Example: An exported SearchActivity receives a search query via Intent extra "query",
               and concatenates it into rawQuery("SELECT * FROM items WHERE name='" + query + "'").
             - The attacker launches the activity with: adb shell "am start -n com.example/.SearchActivity --es query \"' OR 1=1--\""
             
-            ATTACK SURFACE 3 — Deep links:
+            ATTACK SURFACE 3 - Deep links:
             - An Activity with a deep link intent-filter receives attacker-controlled URI data
               (getIntent().getData().getQueryParameter()) which flows into SQL.
             - The attacker triggers: adb shell "am start -a android.intent.action.VIEW -d 'myapp://search?q=\\' OR 1=1--'"
             
-            ATTACK SURFACE 4 — BroadcastReceivers:
+            ATTACK SURFACE 4 - BroadcastReceivers:
             - A dynamically or statically registered BroadcastReceiver receives Intent extras that flow into SQL.
             
             NOT AN ATTACK SURFACE:
             - Pure UI form input (user typing into EditText) going into their own local SQLite is NOT a security
-              issue — the user is modifying their own database. Only flag this if the input path starts from
+              issue - the user is modifying their own database. Only flag this if the input path starts from
               an EXTERNAL source (Intent extras, deep links, ContentProvider parameters, broadcast data).
             
             IMPACT OF SQL INJECTION IN ANDROID:
@@ -126,7 +126,7 @@ public class SemgrepPOC implements poc {
                c) An Activity with deep link intent-filter whose URI data flows into SQL
                d) A BroadcastReceiver (exported or dynamic with custom action) whose data flows into SQL
             2. Attacker-controlled input (selection, projection, sortOrder, URI path segments, Intent extras,
-               deep link query params, broadcast extras) is CONCATENATED into a SQL string — not passed via
+               deep link query params, broadcast extras) is CONCATENATED into a SQL string - not passed via
                selectionArgs/bindArgs parameterization
             3. The concatenated string is passed to rawQuery(), execSQL(), compileStatement(), or
                SQLiteQueryBuilder without proper sanitization
@@ -134,7 +134,7 @@ public class SemgrepPOC implements poc {
             FALSE POSITIVE CONDITIONS:
             - The component containing or reachable from the SQL code is NOT exported
             - The component requires a signature-level permission that blocks third-party access
-            - The input is passed via selectionArgs (parameterized) — e.g., rawQuery("SELECT * FROM t WHERE id=?", new String[]{input})
+            - The input is passed via selectionArgs (parameterized) - e.g., rawQuery("SELECT * FROM t WHERE id=?", new String[]{input})
             - The input is validated/sanitized before concatenation (e.g., Integer.parseInt(), allowlisted column names)
             - The SQL is constructed entirely from hardcoded strings (no external input)
             - The input comes ONLY from UI form fields (EditText) with no external injection path
@@ -185,7 +185,7 @@ public class SemgrepPOC implements poc {
             (The single adb command if TRUE_POSITIVE, write "N/A" if FALSE_POSITIVE)
             
             === ANALYSIS ===
-            (Your detailed reasoning — explain the attack surface (ContentProvider/Activity/DeepLink/Broadcast),
+            (Your detailed reasoning - explain the attack surface (ContentProvider/Activity/DeepLink/Broadcast),
             which parameter is injectable, which SQL method is used, whether the component is exported,
             and what data an attacker could extract)
             """;
@@ -235,13 +235,13 @@ public class SemgrepPOC implements poc {
 
             String dedupeKey = sf.getFilePath();
             if (processedFileLines.contains(dedupeKey)) {
-                log.info("[*]   Skipping — already processed this file from a more specific rule");
+                log.info("[*]   Skipping - already processed this file from a more specific rule");
                 log.info("────────────────────────────────────────────────────");
                 continue;
             }
 
             if (ruleId != null && (ruleId.contains("exported-flag") || ruleId.contains("exported-constant"))) {
-                log.info("[*]   Skipping exported-flag rule — relying on action-specific rules for analysis");
+                log.info("[*]   Skipping exported-flag rule - relying on action-specific rules for analysis");
                 log.info("────────────────────────────────────────────────────");
                 continue;
             }
@@ -316,7 +316,7 @@ public class SemgrepPOC implements poc {
             receiverClassName = receiverClassName.replaceAll("new\\s+", "").replaceAll("\\(.*", "").trim();
             receiverCode = findAndReadJava(receiverClassName);
             if (receiverCode.startsWith("Java file not found")) {
-                log.warn("[!] Receiver class not found: {} — will send registering file only", receiverClassName);
+                log.warn("[!] Receiver class not found: {} - will send registering file only", receiverClassName);
                 receiverCode = "";
             }
         }
@@ -350,7 +350,7 @@ public class SemgrepPOC implements poc {
             String llmVulnClass = extractSection(llmResponse, "=== VULNERABILITY CLASS ===", "=== POC ===");
             String llmPoc = extractSection(llmResponse, "=== POC ===", "=== ANALYSIS ===");
 
-            log.info("[*]   Finding {}: {} — {}",
+            log.info("[*]   Finding {}: {} - {}",
                     toRelativePath(sf.getFilePath()), isTruePositive ? "TRUE POSITIVE" : "FALSE POSITIVE",
                     llmVulnClass.isEmpty() ? vulnClass : llmVulnClass);
 
@@ -428,7 +428,7 @@ public class SemgrepPOC implements poc {
             String llmVulnClass = extractSection(llmResponse, "=== VULNERABILITY CLASS ===", "=== POC ===");
             String llmPoc = extractSection(llmResponse, "=== POC ===", "=== ANALYSIS ===");
 
-            log.info("[*]   Finding {}: {} — {}",
+            log.info("[*]   Finding {}: {} - {}",
                     toRelativePath(sf.getFilePath()), isTruePositive ? "TRUE POSITIVE" : "FALSE POSITIVE",
                     llmVulnClass.isEmpty() ? vulnClass : llmVulnClass);
 

@@ -213,7 +213,7 @@ public class TaiEParser implements Parsers<TaiEResult> {
             String dotFilePath = PathUtils.getTaiEOutputPath() + "/taint-flow-graph.dot";
             Path dotPath = Path.of(dotFilePath);
             if (!Files.exists(dotPath)) {
-                log.warn("[!] Taint flow graph file not found at: {} — skipping TFG enrichment", dotFilePath);
+                log.warn("[!] Taint flow graph file not found at: {} - skipping TFG enrichment", dotFilePath);
                 return;
             }
 
@@ -221,7 +221,7 @@ public class TaiEParser implements Parsers<TaiEResult> {
             TaintFlowGraphParser.ParsedGraph graph = tfgParser.parseGraph(dotFilePath);
 
             if (graph == null) {
-                log.warn("[!] Failed to parse TFG — skipping enrichment");
+                log.warn("[!] Failed to parse TFG - skipping enrichment");
                 return;
             }
 
@@ -250,7 +250,7 @@ public class TaiEParser implements Parsers<TaiEResult> {
                     enriched, taintFlows.size());
 
         } catch (Exception e) {
-            log.warn("[!] Failed to parse taint-flow-graph: {} — continuing without TFG data", e.getMessage());
+            log.warn("[!] Failed to parse taint-flow-graph: {} - continuing without TFG data", e.getMessage());
         }
     }
 

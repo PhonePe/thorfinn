@@ -55,7 +55,7 @@ public class TaiEPOC implements poc {
             3. Intent Redirection: Exported component extracts a nested Intent and passes it to a component launcher, allowing attacker to reach non-exported components.
                EXTRACTION PATTERNS: getParcelableExtra(), getExtras().get/getParcelable(), Intent.parseUri(stringExtra), getParcelableArrayExtra()[0], getParcelableArrayListExtra().get(0), Fragment.getArguments().getParcelable()
                SINKS: startActivity(), startActivityForResult(), startService(), sendBroadcast(), sendOrderedBroadcast(), setResult(RESULT_OK, intent), startActivities()
-               NOTE — setResult: Attacker can set FLAG_GRANT_READ/WRITE_URI_PERMISSION on an internal provider URI; when victim activity returns via setResult(), attacker gains URI grant access to the victim's protected content providers.
+               NOTE - setResult: Attacker can set FLAG_GRANT_READ/WRITE_URI_PERMISSION on an internal provider URI; when victim activity returns via setResult(), attacker gains URI grant access to the victim's protected content providers.
                TRUE POSITIVE if: source exported AND nested Intent extracted via above patterns AND passed to sink without component validation.
                FALSE POSITIVE if: source not exported OR component/package validated before use OR app builds a fresh Intent(this, Target.class) using only data from extras.
             
@@ -80,16 +80,16 @@ public class TaiEPOC implements poc {
             
             9. Changing Device Settings: Exported component receives attacker-controlled Intent data and invokes privileged device APIs without caller validation, using the victim app's own permissions.
                PRIVILEGED SINKS: NotificationManager (cancelAll, cancel, setInterruptionFilter), TelephonyManager (resetAllCarrierActions, setDataEnabled, setDataRoamingEnabled), WifiManager (setWifiEnabled, disconnect, removeNetwork), AudioManager (setRingerMode, setMicrophoneMute, setStreamVolume), Settings.Global/System/Secure.put*(), PowerManager (reboot, goToSleep), DevicePolicyManager (lockNow, wipeData, setCameraDisabled), ConnectivityManager.setAirplaneMode(), AlarmManager (setTime, setTimeZone), BluetoothAdapter (enable, disable), KeyguardManager.disableKeyguard()
-               KEY DISTINCTION: Attacker controls WHETHER/HOW the operation executes — they trigger the component and the app invokes the privileged API with ITS OWN permissions.
+               KEY DISTINCTION: Attacker controls WHETHER/HOW the operation executes - they trigger the component and the app invokes the privileged API with ITS OWN permissions.
                TRUE POSITIVE if: source exported (no permission restriction) AND tainted data drives a privileged API AND app holds required permission AND no checkCallingPermission/checkCallingUid/enforceCallingPermission guard.
                FALSE POSITIVE if: not exported OR requires signature permission OR guarded by caller identity check OR app lacks the required permission OR state is app-internal only OR values are hardcoded.
             
-            8. PendingIntent Redirection: App creates a PendingIntent wrapping an implicit/empty Intent with FLAG_MUTABLE (or pre-SDK31 default mutable), exposes it to an attacker who calls .send(ctx, 0, fillInIntent) supplying the missing component — borrowing victim app's UID and permissions.
+            8. PendingIntent Redirection: App creates a PendingIntent wrapping an implicit/empty Intent with FLAG_MUTABLE (or pre-SDK31 default mutable), exposes it to an attacker who calls .send(ctx, 0, fillInIntent) supplying the missing component - borrowing victim app's UID and permissions.
                SOURCE: PendingIntent.getActivity/getBroadcast/getService/getForegroundService() returns tainted PendingIntent.
                EXPOSURE SINKS: putExtra("key", pi) → sendBroadcast/startActivity/startService/setResult; NotificationCompat/Notification.Builder setContentIntent/setDeleteIntent/setFullScreenIntent; RemoteViews.setOnClickPendingIntent.
-               VULNERABLE (all three required): (1) Wrapped Intent is implicit — no setComponent/setClass/setClassName/setPackage/new Intent(ctx,Class.class); (2) FLAG_MUTABLE used OR no flag with targetSdkVersion < 31; (3) PendingIntent reaches attacker via an exposure sink.
+               VULNERABLE (all three required): (1) Wrapped Intent is implicit - no setComponent/setClass/setClassName/setPackage/new Intent(ctx,Class.class); (2) FLAG_MUTABLE used OR no flag with targetSdkVersion < 31; (3) PendingIntent reaches attacker via an exposure sink.
                FALSE POSITIVE if: explicit component set OR FLAG_IMMUTABLE used OR PendingIntent never leaves app process OR setPackage() restricts recipient.
-               NOTE: If targetSdkVersion >= 31 and no FLAG_MUTABLE, system throws exception — code likely sets a flag, verify which one.
+               NOTE: If targetSdkVersion >= 31 and no FLAG_MUTABLE, system throws exception - code likely sets a flag, verify which one.
             
             YOUR JOB:
             1. Is this flow a TRUE POSITIVE or FALSE POSITIVE?
@@ -100,7 +100,7 @@ public class TaiEPOC implements poc {
             2. Third-Party Package Context Code Execution: Describe the attack steps.
             3. Intent Redirection: Single adb command targeting a non-exported component (identify from manifest). No generic examples.
             4. Implicit Intent Interception: Describe the attack and provide sample attacker AndroidManifest.xml intent-filter.
-            5. Path Traversal: adb shell "content read --uri content://authority/../../files/profileInstalled" — always use this exact path, never URL-encode.
+            5. Path Traversal: adb shell "content read --uri content://authority/../../files/profileInstalled" - always use this exact path, never URL-encode.
             6. Content Provider Proxy: Match to how URI enters the app:
                a) Via ContentProvider query param: adb shell "content query --uri content://com.victim.proxy/path?uri=content://com.victim.private/secrets"
                b) Via Activity deep link (getData().getQueryParameter()): adb shell "am start -a android.intent.action.VIEW -d 'https://host/path?target=content://com.victim.private/secrets' com.victim"
@@ -116,7 +116,7 @@ public class TaiEPOC implements poc {
                a) BroadcastReceiver: adb shell "am broadcast -a <action> -n com.victim/.Receiver [extras]"
                b) Activity/Service: adb shell "am start -n com.victim/.Activity [extras]"
                Use -n for explicit component targeting (required on Android 8+). Pick the action triggering the highest-impact sink. Use actual extra key names from code.
-            9. PendingIntent Redirection: Cannot exploit via adb — requires an attacker app.
+            9. PendingIntent Redirection: Cannot exploit via adb - requires an attacker app.
                Start with: NO_ADB_COMMAND
                Provide: (a) how attacker receives PendingIntent (BroadcastReceiver/NotificationListenerService/onActivityResult); (b) full attacker Java code with pi.send(ctx, 0, fillInIntent) where fillInIntent.setClassName() targets a non-exported victim component (from manifest); (c) attacker AndroidManifest.xml snippet; (d) impact description.
             
@@ -155,7 +155,7 @@ public class TaiEPOC implements poc {
         String decompiler = toolsConfig.getDecompilers();
         boolean isJadx = "jadx".equalsIgnoreCase(decompiler);
 
-        log.info("[*] Decompiler used: {} — sending {} files to LLM", decompiler, isJadx ? ".java" : ".smali");
+        log.info("[*] Decompiler used: {} - sending {} files to LLM", decompiler, isJadx ? ".java" : ".smali");
 
         LLMClient llmClient = new LLMClient(
                 toolsConfig.getLlmApiKey(),
@@ -242,7 +242,7 @@ public class TaiEPOC implements poc {
                 String reason = sourceNotFound && sinkNotFound
                         ? "Both source and sink class files not found"
                         : sourceNotFound ? "Source class file not found" : "Sink class file not found";
-                log.warn("[*]   Flow {}: Skipping — {}", i + 1, reason);
+                log.warn("[*]   Flow {}: Skipping - {}", i + 1, reason);
                 continue;
             }
 

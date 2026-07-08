@@ -48,7 +48,7 @@ public class HtmlReportGenerator {
                 <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Thorfinn — Security Analysis Report</title>
+                <title>Thorfinn - Security Analysis Report</title>
                 <style>
                     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Libre+Baskerville:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
 
@@ -514,7 +514,7 @@ public class HtmlReportGenerator {
                         <span>Confidential</span>
                     </div>
                     <h1>Thorfinn</h1>
-                    <p class="subtitle">Android Security Analysis Report — Generated %s</p>
+                    <p class="subtitle">Android Security Analysis Report - Generated %s</p>
                 </div>
                 """.formatted(escapeHtml(dateLine), escapeHtml(timestamp));
     }
@@ -571,7 +571,7 @@ public class HtmlReportGenerator {
                     content.append("<div style=\"font-size:0.8rem;color:var(--text-secondary)\">").append(escapeHtml(filter)).append("</div>");
                 }
             } else {
-                content.append("<span style=\"color:var(--text-secondary)\">—</span>");
+                content.append("<span style=\"color:var(--text-secondary)\">-</span>");
             }
             content.append("</td>");
             content.append("</tr>\n");
@@ -789,7 +789,7 @@ public class HtmlReportGenerator {
     private String buildFooter() {
         return """
                 <div class="footer">
-                    Thorfinn — Android Security Analysis Framework<br>
+                    Thorfinn - Android Security Analysis Framework<br>
                     Report generated automatically. Verify each finding manually before reporting.
                 </div>
                 </div>

@@ -40,11 +40,11 @@ public class AdbVerifier implements Verification {
         log.info("[*] AdbVerifier: Command: {}", command);
 
         if (command != null && command.startsWith("NO_ADB_COMMAND")) {
-            log.info("[*] AdbVerifier: Non-adb POC detected — storing as evidence for manual review");
+            log.info("[*] AdbVerifier: Non-adb POC detected - storing as evidence for manual review");
             return VerificationResult.builder()
                     .finding(finding)
                     .status("MANUAL_VERIFICATION")
-                    .commandExecuted("N/A — requires attacker app (see evidence)")
+                    .commandExecuted("N/A - requires attacker app (see evidence)")
                     .output(command)
                     .evidence(List.of(command))
                     .build();
@@ -101,7 +101,7 @@ public class AdbVerifier implements Verification {
     private void printPocReviewBox(String command, Finding finding) {
         StringBuilder sb = new StringBuilder("\n");
         sb.append(boxBorder('╔', '╗'));
-        sb.append(boxCentered("LLM-GENERATED POC — REVIEW BEFORE EXECUTION"));
+        sb.append(boxCentered("LLM-GENERATED POC - REVIEW BEFORE EXECUTION"));
         sb.append(boxBorder('╠', '╣'));
         boxField(sb, "Vulnerability", nvl(finding.getVulnerabilityClass(), "Unknown"));
         boxField(sb, "Source", nvl(finding.getSourceFile(), "N/A"));
@@ -165,7 +165,7 @@ public class AdbVerifier implements Verification {
     }
 
     private VerificationResult verifyIntentRedirection(Finding finding, String command) throws Exception {
-        log.info("[*] AdbVerifier: Intent Redirection finding — executing POC to access protected component");
+        log.info("[*] AdbVerifier: Intent Redirection finding - executing POC to access protected component");
 
         try {
             String output = CommandRunner.run(command);
@@ -212,7 +212,7 @@ public class AdbVerifier implements Verification {
     private VerificationResult verifyWebView(Finding finding, String command) throws Exception {
         clearAppData();
 
-        log.info("[*] AdbVerifier: WebView finding — starting network capture");
+        log.info("[*] AdbVerifier: WebView finding - starting network capture");
         networkCapture.startCapture();
 
         try {
@@ -250,7 +250,7 @@ public class AdbVerifier implements Verification {
     }
 
     private VerificationResult verifyDynamicReceiver(Finding finding, String command) throws Exception {
-        log.info("[*] AdbVerifier: Dynamic Receiver finding — launching app via monkey to register receiver");
+        log.info("[*] AdbVerifier: Dynamic Receiver finding - launching app via monkey to register receiver");
         try {
             String monkeyCmd = "adb shell monkey -p " + packageName + " -c android.intent.category.LAUNCHER 1";
             log.info("[*] AdbVerifier: Launching app: {}", monkeyCmd);
@@ -348,7 +348,7 @@ public class AdbVerifier implements Verification {
             String rewritten = command.substring(0, matcher.start())
                     + "adb shell " + quote + inner + quote
                     + command.substring(matcher.end());
-            log.info("[*] AdbVerifier: Emulator root detected — rewrote 'su -c' POC to run directly: {}", rewritten);
+            log.info("[*] AdbVerifier: Emulator root detected - rewrote 'su -c' POC to run directly: {}", rewritten);
             return rewritten;
         }
         return command;

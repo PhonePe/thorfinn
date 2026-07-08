@@ -23,7 +23,7 @@ public class TruffleHog implements Tools {
 
         log.info("[*] Running TruffleHog on decompiled source: {}", decompiledPath);
 
-        // grep exits 1 when no secrets are found — that's a valid "no findings" result,
+        // grep exits 1 when no secrets are found - that's a valid "no findings" result,
         // not a failure. Append `|| true` so the pipeline returns 0 and we save empty output.
         String result = CommandRunner.run(
                 "trufflehog filesystem " + decompiledPath + " --json --no-update 2>/dev/null | grep '\"SourceMetadata\"' || true"

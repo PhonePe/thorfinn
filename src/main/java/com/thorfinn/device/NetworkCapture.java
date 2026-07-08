@@ -25,7 +25,7 @@ public class NetworkCapture {
 
             Thread.sleep(2000);
 
-            log.info("[*] NetworkCapture: DNS capture started — logging to {}", DNS_LOG_PATH);
+            log.info("[*] NetworkCapture: DNS capture started - logging to {}", DNS_LOG_PATH);
 
         } catch (Exception e) {
             log.warn("[!] NetworkCapture: Failed to start DNS capture: {}", e.getMessage());
@@ -151,7 +151,7 @@ public class NetworkCapture {
                 log.debug("[*] NetworkCapture: Waiting for connectivity... ({}s)", i + 1);
             }
         }
-        log.warn("[!] NetworkCapture: Network connectivity not confirmed after 15s — proceeding anyway");
+        log.warn("[!] NetworkCapture: Network connectivity not confirmed after 15s - proceeding anyway");
     }
 
     private void runQuietly(String command) {

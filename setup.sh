@@ -211,7 +211,7 @@ build_jar() {
     if [[ -f "$THORFINN_DIR/target/Thorfinn.jar" ]]; then
         success "Build successful! JAR at: target/Thorfinn.jar"
     else
-        error "Build failed — Thorfinn.jar not found in target/"
+        error "Build failed - Thorfinn.jar not found in target/"
     fi
 }
 
@@ -236,7 +236,7 @@ print_summary() {
 
 main() {
     echo ""
-    echo -e "${CYAN}⚔️  Thorfinn — Setup & Build${NC}"
+    echo -e "${CYAN}⚔️  Thorfinn - Setup & Build${NC}"
     echo ""
 
     detect_os

@@ -27,19 +27,19 @@ public class DeviceManager {
     private void setupRootAccess() {
         boolean isEmulator = detectEmulator();
         if (!isEmulator) {
-            log.info("[*] DeviceManager: Physical device detected — root commands will use 'su -c'");
+            log.info("[*] DeviceManager: Physical device detected - root commands will use 'su -c'");
             return;
         }
 
-        log.info("[*] DeviceManager: Emulator detected — enabling root via 'adb root'");
+        log.info("[*] DeviceManager: Emulator detected - enabling root via 'adb root'");
         try {
             CommandRunner.run("adb root");
             CommandRunner.run("adb wait-for-device");
             Thread.sleep(2000);
             emulatorRoot = true;
-            log.info("[*] DeviceManager: Root access enabled — running commands as root via 'adb shell'");
+            log.info("[*] DeviceManager: Root access enabled - running commands as root via 'adb shell'");
         } catch (Exception e) {
-            log.warn("[!] DeviceManager: 'adb root' failed ({}) — falling back to 'su -c'", e.getMessage());
+            log.warn("[!] DeviceManager: 'adb root' failed ({}) - falling back to 'su -c'", e.getMessage());
             emulatorRoot = false;
         }
     }

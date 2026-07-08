@@ -16,6 +16,7 @@ import com.thorfinn.poc.SemgrepPOC;
 import com.thorfinn.poc.TruffleHogPOC;
 import com.thorfinn.poc.poc;
 import com.thorfinn.report.HtmlReportGenerator;
+import com.thorfinn.report.JsonReportGenerator;
 import com.thorfinn.tools.TaiE;
 import com.thorfinn.tools.PermissionChecker;
 import com.thorfinn.tools.Semgrep;
@@ -60,7 +61,7 @@ public class  Orchestrator {
         printBanner();
         log.info("[*] Starting Thorfinn Pipeline for package: {} (CPG time-limit: {}s)", packageName, timeLimit);
         CommandRunner.deleteContentsOfFolder(Paths.get(PathUtils.getOutputPath()));
-        log.info("[*] Step 0: Setting up — extracting APK from device...");
+        log.info("[*] Step 0: Setting up - extracting APK from device...");
         setupAndExtractApk(config);
         log.info("[*] Step 1: Decompiling APK...");
         decompileApk(config);
@@ -76,6 +77,9 @@ public class  Orchestrator {
         log.info("[*] Step 6: Generating HTML report...");
         HtmlReportGenerator reportGenerator = new HtmlReportGenerator();
         reportGenerator.generateReport(results, manifestInfo);
+        log.info("[*] Step 6.1: Generating JSON report...");
+        JsonReportGenerator jsonReportGenerator = new JsonReportGenerator();
+        jsonReportGenerator.generateReport(results, manifestInfo);
         log.info("[*] Pipeline complete. Total confirmed findings: {}, Verified: {}", allFindings.size(), results.size());
     }
 
@@ -169,7 +173,7 @@ public class  Orchestrator {
                     default -> log.warn("[!] Unknown tool: {}", tool);
                 }
             } catch (Throwable t) {
-                log.error("[!] Tool '{}' failed with error: {} — continuing with remaining tools", tool, t.getMessage());
+                log.error("[!] Tool '{}' failed with error: {} - continuing with remaining tools", tool, t.getMessage());
                 log.debug("[!] Stack trace for tool '{}' failure:", tool, t);
             }
         }
@@ -200,7 +204,7 @@ public class  Orchestrator {
                     default -> log.warn("[!] No POC generator for tool: {}", tool);
                 }
             } catch (Throwable t) {
-                log.error("[!] POC generation for '{}' failed: {} — continuing with remaining tools", tool, t.getMessage());
+                log.error("[!] POC generation for '{}' failed: {} - continuing with remaining tools", tool, t.getMessage());
                 log.debug("[!] Stack trace for POC '{}' failure:", tool, t);
             }
         }
@@ -214,7 +218,7 @@ public class  Orchestrator {
         for (Finding finding : findings) {
 
             if (!finding.isTruePositive()) {
-                log.info("[*] Finding [{} -> {}]: FALSE_POSITIVE — skipping verification",
+                log.info("[*] Finding [{} -> {}]: FALSE_POSITIVE - skipping verification",
                         finding.getSourceFile(), finding.getSinkFile());
                 results.add(VerificationResult.builder()
                         .finding(finding)
@@ -234,7 +238,7 @@ public class  Orchestrator {
                             finding.getSourceFile(), finding.getSinkFile(), result.getStatus(),
                             result.getEvidence() != null ? result.getEvidence().size() : 0);
                 } catch (Throwable t) {
-                    log.error("[!] Verification failed for [{} -> {}]: {} — continuing",
+                    log.error("[!] Verification failed for [{} -> {}]: {} - continuing",
                             finding.getSourceFile(), finding.getSinkFile(), t.getMessage());
                     results.add(VerificationResult.builder()
                             .finding(finding)

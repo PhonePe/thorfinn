@@ -13,7 +13,7 @@ rules:
           regex: ^"(?!android\.intent\.action\.|com\.google\.).*"$
     message: >
       Dynamically registered BroadcastReceiver '$RECEIVER_CLASS' with custom action $ACTION.
-      Custom actions are externally triggerable — any app can send a broadcast matching this action.
+      Custom actions are externally triggerable - any app can send a broadcast matching this action.
     languages: [java]
     severity: WARNING
     metadata:

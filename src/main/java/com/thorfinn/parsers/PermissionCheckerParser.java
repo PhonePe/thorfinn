@@ -61,7 +61,7 @@ public class PermissionCheckerParser implements Parsers<PermissionCheckerResult>
         log.info("[*] Parsed PermissionChecker output: {} finding(s)", findings.size());
         for (int i = 0; i < findings.size(); i++) {
             PermissionFinding f = findings.get(i);
-            log.info("[*]   Finding {}: [{}] {} — {}", i + 1, f.getSeverity(), f.getCheck(), f.getTitle());
+            log.info("[*]   Finding {}: [{}] {} - {}", i + 1, f.getSeverity(), f.getCheck(), f.getTitle());
         }
 
         return result;

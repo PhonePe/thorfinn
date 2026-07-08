@@ -1,5 +1,5 @@
 sources:
-  # Intent-based sources — attacker-controlled data entering via Intents
+  # Intent-based sources - attacker-controlled data entering via Intents
   - { kind: call, method: "<android.app.Activity: android.content.Intent getIntent()>", index: result }
   - { kind: call, method: "<android.content.Intent: java.lang.String getStringExtra(java.lang.String)>", index: result }
   - { kind: call, method: "<android.content.Intent: android.net.Uri getData()>", index: result }
@@ -10,35 +10,35 @@ sources:
   - { kind: call, method: "<android.content.Intent: java.io.Serializable getSerializableExtra(java.lang.String)>", index: result }
   # type: "android.content.Intent" ensures taint survives (Intent) checkcast in pointer analysis
   - { kind: call, method: "<android.content.Intent: android.os.Parcelable getParcelableExtra(java.lang.String)>", index: result, type: "android.content.Intent" }
-  # Generic/Uri parcelable extras — needed for arbitrary file write/output Uri flows
+  # Generic/Uri parcelable extras - needed for arbitrary file write/output Uri flows
   - { kind: call, method: "<android.content.Intent: android.os.Parcelable getParcelableExtra(java.lang.String)>", index: result }
   - { kind: call, method: "<android.content.Intent: android.os.Parcelable getParcelableExtra(java.lang.String)>", index: result, type: "android.net.Uri" }
   - { kind: call, method: "<android.content.Intent: java.lang.String getDataString()>", index: result }
 
-  # Bundle sources — data extracted from Intent extras
+  # Bundle sources - data extracted from Intent extras
   # NOTE: Plain Bundle/BaseBundle string getters are intentionally NOT sources.
   # They match savedInstanceState (onCreate/onRestoreInstanceState params) and
   # Fragment/Jetpack-Compose nav arguments (NavBackStackEntry.getArguments()),
-  # which are app-internal state — NOT attacker-controlled IPC entry points, and
+  # which are app-internal state - NOT attacker-controlled IPC entry points, and
   # were the dominant false-positive driver (Compose nav / saved-state → file sinks).
   # Genuine Intent-extra flows are still covered: Intent.getExtras() (source) ->
   # Bundle.getString (transfer, see below) -> sink. So they remain as transfers only.
   #
-  # Bundle.get() typed as Intent — for Intent Redirection via Bundle.get("key") cast to Intent
+  # Bundle.get() typed as Intent - for Intent Redirection via Bundle.get("key") cast to Intent
   - { kind: call, method: "<android.os.Bundle: java.lang.Object get(java.lang.String)>", index: result, type: "android.content.Intent" }
 
-  # Bundle Parcelable sources — nested Intent extraction for Intent Redirection
+  # Bundle Parcelable sources - nested Intent extraction for Intent Redirection
   # type: "android.content.Intent" so taint survives (Intent) checkcast
   - { kind: call, method: "<android.os.Bundle: android.os.Parcelable getParcelable(java.lang.String)>", index: result, type: "android.content.Intent" }
-  # Generic/Uri Bundle parcelables — needed for attacker-controlled output Uri flows
+  # Generic/Uri Bundle parcelables - needed for attacker-controlled output Uri flows
   - { kind: call, method: "<android.os.Bundle: android.os.Parcelable getParcelable(java.lang.String)>", index: result }
   - { kind: call, method: "<android.os.Bundle: android.os.Parcelable getParcelable(java.lang.String)>", index: result, type: "android.net.Uri" }
 
-  # Intent Parcelable array sources — array of nested Intents
+  # Intent Parcelable array sources - array of nested Intents
   - { kind: call, method: "<android.content.Intent: android.os.Parcelable[] getParcelableArrayExtra(java.lang.String)>", index: result }
   - { kind: call, method: "<android.content.Intent: java.util.ArrayList getParcelableArrayListExtra(java.lang.String)>", index: result }
 
-  # Fragment argument sources — nested Intent via Fragment.getArguments()
+  # Fragment argument sources - nested Intent via Fragment.getArguments()
   - { kind: call, method: "<android.app.Fragment: android.os.Bundle getArguments()>", index: result }
   - { kind: call, method: "<androidx.fragment.app.Fragment: android.os.Bundle getArguments()>", index: result }
 
@@ -46,13 +46,13 @@ sources:
   - { kind: call, method: "<android.content.Intent: void <init>(java.lang.String)>", index: base }
   - { kind: call, method: "<android.content.Intent: void <init>(java.lang.String,android.net.Uri)>", index: base }
 
-  # Uri path segment sources — attacker-controlled path data from Content Provider URIs
+  # Uri path segment sources - attacker-controlled path data from Content Provider URIs
   # These methods auto-decode URL-encoded values (e.g., %2F → /), enabling path traversal
   - { kind: call, method: "<android.net.Uri: java.lang.String getLastPathSegment()>", index: result }
   - { kind: call, method: "<android.net.Uri: java.util.List getPathSegments()>", index: result }
   - { kind: call, method: "<android.net.Uri: java.lang.String getPath()>", index: result }
 
-  # ContentProvider parameter sources — Uri parameters in ContentProvider callbacks are attacker-controlled
+  # ContentProvider parameter sources - Uri parameters in ContentProvider callbacks are attacker-controlled
   # These ensure openFile/query/insert/update/delete are treated as entry points with tainted Uri
   - { kind: param, method: "<android.content.ContentProvider: android.os.ParcelFileDescriptor openFile(android.net.Uri,java.lang.String)>", index: 0 }
   - { kind: param, method: "<android.content.ContentProvider: android.os.ParcelFileDescriptor openFile(android.net.Uri,java.lang.String,android.os.CancellationSignal)>", index: 0 }
@@ -62,7 +62,7 @@ sources:
   - { kind: param, method: "<android.content.ContentProvider: int delete(android.net.Uri,java.lang.String,java.lang.String[])>", index: 0 }
 
 
-  # PendingIntent Redirection sources — the returned PendingIntent object is tainted
+  # PendingIntent Redirection sources - the returned PendingIntent object is tainted
   # If this PendingIntent wraps a mutable + implicit Intent and is exposed to an attacker,
   # the attacker can call .send() with a fillInIntent to hijack the victim's identity.
   - { kind: call, method: "<android.app.PendingIntent: android.app.PendingIntent getActivity(android.content.Context,int,android.content.Intent,int)>", index: result }
@@ -114,18 +114,18 @@ sinks:
   # Intent Redirection sinks
   - { method: "<android.app.Activity: void setResult(int,android.content.Intent)>", index: 1 }
 
-  # Intent Redirection sinks — startActivities
+  # Intent Redirection sinks - startActivities
   - { method: "<android.content.Context: void startActivities(android.content.Intent[])>", index: 0 }
   - { method: "<android.app.Activity: void startActivities(android.content.Intent[])>", index: 0 }
 
-  # Implicit Intent Interception sinks — PendingIntent
+  # Implicit Intent Interception sinks - PendingIntent
   - { method: "<android.app.PendingIntent: android.app.PendingIntent getActivity(android.content.Context,int,android.content.Intent,int)>", index: 2 }
   - { method: "<android.app.PendingIntent: android.app.PendingIntent getActivity(android.content.Context,int,android.content.Intent,int,android.os.Bundle)>", index: 2 }
   - { method: "<android.app.PendingIntent: android.app.PendingIntent getBroadcast(android.content.Context,int,android.content.Intent,int)>", index: 2 }
   - { method: "<android.app.PendingIntent: android.app.PendingIntent getService(android.content.Context,int,android.content.Intent,int)>", index: 2 }
   - { method: "<android.app.PendingIntent: android.app.PendingIntent getForegroundService(android.content.Context,int,android.content.Intent,int)>", index: 2 }
 
-  # Implicit Intent Interception sinks — additional sending methods
+  # Implicit Intent Interception sinks - additional sending methods
   - { method: "<android.content.Context: boolean bindService(android.content.Intent,android.content.ServiceConnection,int)>", index: 0 }
   - { method: "<android.content.Context: void sendStickyBroadcast(android.content.Intent)>", index: 0 }
   - { method: "<android.content.Context: android.content.ComponentName startForegroundService(android.content.Intent)>", index: 0 }
@@ -135,14 +135,14 @@ sinks:
 
 
 
-  # Path Traversal sinks — actual file access operations (File constructors are transfers, not sinks)
+  # Path Traversal sinks - actual file access operations (File constructors are transfers, not sinks)
   - { method: "<java.io.FileInputStream: void <init>(java.lang.String)>", index: 0 }
   - { method: "<java.io.FileOutputStream: void <init>(java.lang.String)>", index: 0 }
   - { method: "<java.io.FileInputStream: void <init>(java.io.File)>", index: 0 }
   - { method: "<java.io.FileOutputStream: void <init>(java.io.File)>", index: 0 }
   - { method: "<android.os.ParcelFileDescriptor: android.os.ParcelFileDescriptor open(java.io.File,int)>", index: 0 }
 
-  # Content Provider Proxy sinks — ContentResolver methods where attacker-controlled URI is forwarded
+  # Content Provider Proxy sinks - ContentResolver methods where attacker-controlled URI is forwarded
   # Detects when an exported component takes a URI from input and proxies it to another provider
   - { method: "<android.content.ContentResolver: android.database.Cursor query(android.net.Uri,java.lang.String[],java.lang.String,java.lang.String[],java.lang.String)>", index: 0 }
   - { method: "<android.content.ContentResolver: android.database.Cursor query(android.net.Uri,java.lang.String[],android.os.Bundle,android.os.CancellationSignal)>", index: 0 }
@@ -161,7 +161,7 @@ sinks:
   - { method: "<android.content.ContentResolver: android.content.res.AssetFileDescriptor openTypedAssetFile(android.net.Uri,java.lang.String,android.os.Bundle)>", index: 0 }
   - { method: "<android.content.ContentResolver: android.content.res.AssetFileDescriptor openTypedAssetFileDescriptor(android.net.Uri,java.lang.String,android.os.Bundle)>", index: 0 }
 
-  # Insecure Device Configuration sinks — privileged device-level operations reachable from exported components
+  # Insecure Device Configuration sinks - privileged device-level operations reachable from exported components
   # Attacker-controlled intent data flowing to these APIs allows device disruption/configuration changes
   # Notification management
   - { method: "<android.app.NotificationManager: void cancelAll()>", index: -1 }
@@ -175,7 +175,7 @@ sinks:
   - { method: "<android.net.wifi.WifiManager: boolean setWifiEnabled(boolean)>", index: 0 }
   - { method: "<android.net.wifi.WifiManager: boolean disconnect()>", index: -1 }
   - { method: "<android.net.wifi.WifiManager: boolean removeNetwork(int)>", index: 0 }
-  # Settings writes — attacker-controlled value written to global/system/secure settings
+  # Settings writes - attacker-controlled value written to global/system/secure settings
   - { method: "<android.provider.Settings$Global: boolean putInt(android.content.ContentResolver,java.lang.String,int)>", index: 2 }
   - { method: "<android.provider.Settings$Global: boolean putString(android.content.ContentResolver,java.lang.String,java.lang.String)>", index: 2 }
   - { method: "<android.provider.Settings$System: boolean putInt(android.content.ContentResolver,java.lang.String,int)>", index: 2 }
@@ -183,7 +183,7 @@ sinks:
   - { method: "<android.provider.Settings$Secure: boolean putInt(android.content.ContentResolver,java.lang.String,int)>", index: 2 }
   - { method: "<android.provider.Settings$Secure: boolean putString(android.content.ContentResolver,java.lang.String,java.lang.String)>", index: 2 }
 
-  # PendingIntent Redirection sinks — Notification delivery methods
+  # PendingIntent Redirection sinks - Notification delivery methods
   # PendingIntent exposed via notification actions is readable by any NotificationListenerService
   - { method: "<androidx.core.app.NotificationCompat$Builder: androidx.core.app.NotificationCompat$Builder setContentIntent(android.app.PendingIntent)>", index: 0 }
   - { method: "<androidx.core.app.NotificationCompat$Builder: androidx.core.app.NotificationCompat$Builder setDeleteIntent(android.app.PendingIntent)>", index: 0 }
@@ -191,7 +191,7 @@ sinks:
   - { method: "<android.app.Notification$Builder: android.app.Notification$Builder setContentIntent(android.app.PendingIntent)>", index: 0 }
   - { method: "<android.app.Notification$Builder: android.app.Notification$Builder setDeleteIntent(android.app.PendingIntent)>", index: 0 }
   - { method: "<android.app.Notification$Builder: android.app.Notification$Builder setFullScreenIntent(android.app.PendingIntent,boolean)>", index: 0 }
-  # RemoteViews — PendingIntent exposed via widget click handlers
+  # RemoteViews - PendingIntent exposed via widget click handlers
   - { method: "<android.widget.RemoteViews: void setOnClickPendingIntent(int,android.app.PendingIntent)>", index: 1 }
 
 transfers:
@@ -211,20 +211,20 @@ transfers:
   - { method: "<android.os.Bundle: java.lang.String getString(java.lang.String)>", from: base, to: result }
   - { method: "<android.os.Bundle: java.lang.String getString(java.lang.String,java.lang.String)>", from: base, to: result }
   - { method: "<android.os.Bundle: java.lang.Object get(java.lang.String)>", from: base, to: result }
-  # Bundle.get() transfer typed as Intent — for Intent Redirection via Bundle.get("key") cast to Intent
+  # Bundle.get() transfer typed as Intent - for Intent Redirection via Bundle.get("key") cast to Intent
   - { method: "<android.os.Bundle: java.lang.Object get(java.lang.String)>", from: base, to: result, type: "android.content.Intent" }
   - { method: "<android.os.BaseBundle: java.lang.String getString(java.lang.String)>", from: base, to: result }
   - { method: "<android.os.BaseBundle: java.lang.String getString(java.lang.String,java.lang.String)>", from: base, to: result }
 
-  # Bundle Parcelable transfers — for nested Intent extraction (typed as Intent for cast survival)
+  # Bundle Parcelable transfers - for nested Intent extraction (typed as Intent for cast survival)
   - { method: "<android.os.Bundle: android.os.Parcelable getParcelable(java.lang.String)>", from: base, to: result, type: "android.content.Intent" }
   - { method: "<android.os.Bundle: android.os.Parcelable getParcelable(java.lang.String)>", from: base, to: result }
   - { method: "<android.os.Bundle: android.os.Parcelable getParcelable(java.lang.String)>", from: base, to: result, type: "android.net.Uri" }
 
-  # Intent.parseUri — converts tainted string URI into an Intent (critical for Intent Redirection)
+  # Intent.parseUri - converts tainted string URI into an Intent (critical for Intent Redirection)
   - { method: "<android.content.Intent: android.content.Intent parseUri(java.lang.String,int)>", from: 0, to: result }
 
-  # Parcelable array/list transfers — for arrays of nested Intents
+  # Parcelable array/list transfers - for arrays of nested Intents
   - { method: "<android.content.Intent: android.os.Parcelable[] getParcelableArrayExtra(java.lang.String)>", from: base, to: result }
   - { method: "<android.content.Intent: java.util.ArrayList getParcelableArrayListExtra(java.lang.String)>", from: base, to: result }
 
@@ -232,14 +232,14 @@ transfers:
   - { method: "<android.app.Fragment: android.os.Bundle getArguments()>", from: base, to: result }
   - { method: "<androidx.fragment.app.Fragment: android.os.Bundle getArguments()>", from: base, to: result }
 
-  # Implicit Intent propagation — tainted Intent survives method chaining (all return this)
+  # Implicit Intent propagation - tainted Intent survives method chaining (all return this)
   # Without these, taint is lost when Jimple reassigns the variable to the method return value
   # e.g., pick.setType("image/*") → Jimple: $r1 = invoke pick.setType("image/*") → pick becomes $r1
   - { method: "<android.content.Intent: android.content.Intent putExtra(java.lang.String,java.lang.String)>", from: base, to: result }
   - { method: "<android.content.Intent: android.content.Intent putExtra(java.lang.String,int)>", from: base, to: result }
   - { method: "<android.content.Intent: android.content.Intent putExtra(java.lang.String,boolean)>", from: base, to: result }
   - { method: "<android.content.Intent: android.content.Intent putExtra(java.lang.String,android.os.Parcelable)>", from: base, to: result }
-  # PendingIntent Redirection transfer — tainted PendingIntent (arg 1) taints the delivery Intent
+  # PendingIntent Redirection transfer - tainted PendingIntent (arg 1) taints the delivery Intent
   - { method: "<android.content.Intent: android.content.Intent putExtra(java.lang.String,android.os.Parcelable)>", from: 1, to: base }
   - { method: "<android.content.Intent: android.content.Intent putExtra(java.lang.String,android.os.Parcelable)>", from: 1, to: result }
   - { method: "<android.content.Intent: android.content.Intent putExtra(java.lang.String,java.io.Serializable)>", from: base, to: result }
@@ -252,7 +252,7 @@ transfers:
   - { method: "<android.content.Intent: android.content.Intent setData(android.net.Uri)>", from: base, to: result }
   - { method: "<android.content.Intent: android.content.Intent setAction(java.lang.String)>", from: base, to: result }
   - { method: "<android.content.Intent: android.content.Intent setDataAndType(android.net.Uri,java.lang.String)>", from: base, to: result }
-  # These were MISSING — caused taint loss for setType/setComponent/setFlags/addCategory chains
+  # These were MISSING - caused taint loss for setType/setComponent/setFlags/addCategory chains
   - { method: "<android.content.Intent: android.content.Intent setType(java.lang.String)>", from: base, to: result }
   - { method: "<android.content.Intent: android.content.Intent setComponent(android.content.ComponentName)>", from: base, to: result }
   - { method: "<android.content.Intent: android.content.Intent setClass(android.content.Context,java.lang.Class)>", from: base, to: result }
@@ -271,7 +271,7 @@ transfers:
   - { method: "<android.net.Uri: java.lang.String getScheme()>", from: base, to: result }
   - { method: "<android.net.Uri: java.lang.String getFragment()>", from: base, to: result }
   - { method: "<android.net.Uri: java.lang.String getLastPathSegment()>", from: base, to: result }
-  # Uri.parse — converts tainted String into a Uri object (critical for Content Provider Proxy flows)
+  # Uri.parse - converts tainted String into a Uri object (critical for Content Provider Proxy flows)
   - { method: "<android.net.Uri: android.net.Uri parse(java.lang.String)>", from: 0, to: result }
 
   # String operations
@@ -285,7 +285,7 @@ transfers:
   - { method: "<java.lang.String: java.lang.String replace(java.lang.CharSequence,java.lang.CharSequence)>", from: base, to: result }
   - { method: "<java.lang.String: java.lang.String format(java.lang.String,java.lang.Object[])>", from: 0, to: result }
 
-  # LiveData transfers — taint survives ViewModel LiveData patterns
+  # LiveData transfers - taint survives ViewModel LiveData patterns
   - { method: "<androidx.lifecycle.MutableLiveData: void setValue(java.lang.Object)>", from: 0, to: base }
   - { method: "<androidx.lifecycle.MutableLiveData: void postValue(java.lang.Object)>", from: 0, to: base }
   - { method: "<androidx.lifecycle.LiveData: java.lang.Object getValue()>", from: base, to: result }
@@ -297,7 +297,7 @@ transfers:
   - { method: "<java.util.Map: java.lang.Object get(java.lang.Object)>", from: base, to: result }
   - { method: "<java.util.Map: java.lang.Object put(java.lang.Object,java.lang.Object)>", from: 1, to: base }
 
-  # File path transfers — taint propagates through File object construction
+  # File path transfers - taint propagates through File object construction
   - { method: "<java.io.File: void <init>(java.io.File,java.lang.String)>", from: 1, to: base }
   - { method: "<java.io.File: void <init>(java.lang.String,java.lang.String)>", from: 1, to: base }
   - { method: "<java.io.File: void <init>(java.lang.String)>", from: 0, to: base }

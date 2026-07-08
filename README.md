@@ -1,19 +1,15 @@
 # Thorfinn
 
 <p align="center">
-  <img src="assets/logo.png" width="600">
+  <img src="assets/logo.png" width="600" alt="Thorfinn logo">
 </p>
 
 <div align="center">
 
-### Drop in an APK. Find client-side vulnerabilities. Validate exploits with AI.
+### Drop in an APK. Find client-side vulnerabilities. Validate exploitability with AI.
 
-<br/>
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-FFFFFF?style=for-the-badge&labelColor=555555)](LICENSE)
-[![Stars](https://img.shields.io/github/stars/PhonePe/thorfinn?style=for-the-badge&logo=github&logoColor=FFFFFF&color=FFFFFF&labelColor=555555&cacheSeconds=300)](https://github.com/PhonePe/thorfinn/stargazers)
-![Open issues](https://img.shields.io/github/issues/PhonePe/thorfinn?style=for-the-badge&color=FFFFFF&labelColor=555555)
-![PRs welcome](https://img.shields.io/badge/PRs-welcome-FFFFFF?style=for-the-badge&labelColor=555555)
+**[Get Started](#quick-start)** · **[Watch Demo](#demo)** · **[Vulnerabilities](#vulnerabilities-identified)** · **[How It Works](#how-it-works)**
 
 <br/>
 
@@ -23,11 +19,17 @@
 
 <br/>
 
-**[Quick Start](#quick-start)** · **[Why Thorfinn](#why-thorfinn)** · **[Vulnerabilities Identified](#Vulnerabilities-Identified)** · **[How It Works](#how-it-works)** · **[Docs](https://phonepe.github.io/thorfinn/)**
-
-<br/>
+<sub>
+  Traces complex Android data flows
+  &nbsp;·&nbsp;
+  Generates and executes PoCs on a connected device or emulator
+  &nbsp;·&nbsp;
+  Produces evidence-rich HTML reports
+</sub>
 
 </div>
+
+---
 
 Thorfinn is an open-source Android APK security analysis tool for security engineers and bug bounty hunters. Provide the package name of an app installed on a connected device or emulator, and Thorfinn analyzes it for client-side vulnerabilities, then validates high-confidence findings through LLM-assisted dynamic testing.
 
@@ -81,6 +83,36 @@ java -jar target/Thorfinn.jar com.target.app --config config/config.yml --time-l
 
 `setup.sh` handles Java 17, Maven, JADX, Semgrep, TruffleHog, APKTool, ADB, and Python. Works on macOS (Homebrew) and Linux (apt).
 
+### Configuration
+
+After setup, create a config `config.yml`:
+
+```yaml
+toolsConfig:
+  decompilers: jadx
+  analysisTools:
+    - taie
+    - semgrep
+    - permissionChecker
+    - truffleHog
+  llmApiKey: YOUR_API_KEY
+  llmModel: gpt-4
+  llmBaseUrl: https://api.openai.com/v1
+  taiEAgentEnabled: false                 # flip to true if you reach input token limit in direct flow or else keep it false
+  taiEAgentMaxToolResponsePercentage: 30 # Max context % for agent tool responses
+
+pathConfigs:
+  baseDirectory: BASE_DIRECTORY_FOR_PROJECT
+  decompiledApkPath: /resources/decompiled_apks/
+  taiePath: /resources/tools/tai-e-all-0.5.4-SNAPSHOT.jar
+  androidPlatformsPath: /resources/android-platforms/
+  taieOutputPath: /resources/taie_output/
+  taintConfigPath: /config/taint_config.yml
+  permissionCheckerPath: /resources/tools/permissionChecker.py
+  semgrepRulesPath: /resources/tools/semgrep-rules/
+  outputPath: /resources/output/
+```
+
 ## Usage
 
 ```
@@ -97,7 +129,9 @@ Options:
   -h, --help                  Show this help message
 ```
 
-The `--config` flag is **required** — Thorfinn no longer falls back to a default config location. Pass the path to your `config.yml` (relative paths are resolved against the current working directory).
+The `--config` flag is **required** - Thorfinn no longer falls back to a default config location. Pass the path to your `config.yml` (relative paths are resolved against the current working directory).
+
+
 
 ## POC Verification (LLM-generated commands)
 
@@ -113,7 +147,7 @@ In the default interactive mode you'll see a prompt like this for each command, 
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║               LLM-GENERATED POC — REVIEW BEFORE EXECUTION                    ║
+║               LLM-GENERATED POC - REVIEW BEFORE EXECUTION                    ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
 ║ Vulnerability : WebView Vulnerability                                        ║
 ║ Source        : vulnerable.example.app.MainActivity                          ║
@@ -125,12 +159,12 @@ In the default interactive mode you'll see a prompt like this for each command, 
 [?] Execute this command on device? (Y/N):
 ```
 
-> ⚠️ Review commands carefully in interactive mode. `--auto-approve` runs every LLM-generated command against your device without review — use it only on test devices/apps you trust.
+> ⚠️ Review commands carefully in interactive mode. `--auto-approve` runs every LLM-generated command against your device without review - use it only on test devices/apps you trust.
 
 Examples:
 
 ```bash
-# Interactive review (default) — approve or skip each command
+# Interactive review (default) - approve or skip each command
 java -jar target/Thorfinn.jar com.target.app --config config/config.yml
 
 # Run everything unattended
@@ -159,6 +193,32 @@ flowchart TD
     G --> H["📊 HTML Report"]
 ```
 
-### Documentation
+## Final Report
 
-To know more about Thorfinn and it's features, you can read our detailed documentation [here](https://phonepe.github.io/thorfinn/index.html).
+For validated findings, Thorfinn reports:
+
+- Vulnerability type and severity
+- Source and sink details
+- Complete taint path
+- Affected Android components
+- Relevant Manifest configuration
+- Generated proof-of-concept payload
+- Device or emulator execution output
+- Runtime evidence of exploitability
+- Context required to manually reproduce and validate the issue
+
+## Documentation
+
+Read the detailed documentation for installation, configuration, rule customization, supported checks, and architecture:
+
+**[phonepe.github.io/thorfinn](https://phonepe.github.io/thorfinn/)**
+
+## Responsible Use
+
+Thorfinn is intended for authorized security testing, research, and bug bounty programs where you have permission to assess the target application.
+
+Do not use Thorfinn against applications, devices, or environments without explicit authorization.
+
+## License
+
+Thorfinn is licensed under the [Apache License 2.0](LICENSE).

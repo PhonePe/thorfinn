@@ -51,7 +51,7 @@ public class Main {
     private static void printHelp() {
         System.out.println("""
                 
-                Thorfinn %s — Automated Android Client-Side Security Scanner
+                Thorfinn %s - Automated Android Client-Side Security Scanner
                 
                 Usage:
                   java -jar Thorfinn.jar <package-name> --config <path> [options]

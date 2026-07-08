@@ -54,7 +54,7 @@ public class TruffleHogPOC implements poc {
             TRUE_POSITIVE or FALSE_POSITIVE
             
             === ANALYSIS ===
-            (Your reasoning for THIS specific secret — what it is, why it is or isn't a real leaked secret.)
+            (Your reasoning for THIS specific secret - what it is, why it is or isn't a real leaked secret.)
             """;
 
     @Override

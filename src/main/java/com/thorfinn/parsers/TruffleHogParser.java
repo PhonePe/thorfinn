@@ -66,7 +66,7 @@ public class TruffleHogParser implements Parsers<TruffleHogResult> {
         log.info("[*] Parsed TruffleHog output: {} secret(s) found", findings.size());
         for (int i = 0; i < findings.size(); i++) {
             SecretFinding f = findings.get(i);
-            log.info("[*]   Secret {}: {} (line {}) — {}", i + 1, f.getFilePath(), f.getLineNumber(), f.getRaw());
+            log.info("[*]   Secret {}: {} (line {}) - {}", i + 1, f.getFilePath(), f.getLineNumber(), f.getRaw());
         }
 
         return result;

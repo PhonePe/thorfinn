@@ -71,9 +71,9 @@ public class PermissionCheckerPOC implements poc {
                - For ContentProviders: ContentResolver query/insert/update/delete calls with the provider authority
                - For Provider Permission Gap (openFile bypass): Show openFile() call with the opposite mode
                  to bypass the strong permission. E.g., if readPermission is signature-level, call
-                 openFile(uri, "w", null) to bypass — the provider may still return a readable fd.
+                 openFile(uri, "w", null) to bypass - the provider may still return a readable fd.
             
-            4. IMPACT: What the attacker gains — e.g., access to user data, ability to trigger privileged actions, etc.
+            4. IMPACT: What the attacker gains - e.g., access to user data, ability to trigger privileged actions, etc.
             """;
 
     @Override

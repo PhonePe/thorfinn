@@ -243,7 +243,7 @@ public class CommandRunner {
             throw new IllegalArgumentException(
                     "Refusing to delete contents of a protected/too-shallow directory: "
                             + folder.toAbsolutePath()
-                            + ". Check the configured output path — it must point to a dedicated sub-directory.");
+                            + ". Check the configured output path - it must point to a dedicated sub-directory.");
         }
         log.info("[*] Deleting contents of folder: {}", folder.toAbsolutePath());
         try (var walk = Files.walk(folder)) {
