@@ -8,8 +8,15 @@
 
 ### Drop in an APK. Find client-side vulnerabilities. Validate exploitability with AI.
 
+<br/>
 
-**[Get Started](#quick-start)** · **[Watch Demo](#demo)** · **[Vulnerabilities](#vulnerabilities-identified)** · **[How It Works](#how-it-works)**
+<a href="#quick-start"><img src="assets/btn-get-started.svg" alt="Get Started"></a>
+&nbsp;
+<a href="#demo"><img src="assets/btn-demo.svg" alt="Demo"></a>
+&nbsp;
+<a href="#vulnerabilities-identified"><img src="assets/btn-vulnerabilities.svg" alt="Vulnerabilities"></a>
+&nbsp;
+<a href="#how-it-works"><img src="assets/btn-how-it-works.svg" alt="How It Works"></a>
 
 <br/>
 
@@ -31,7 +38,7 @@
 
 ---
 
-Thorfinn is an open-source Android APK security analysis tool for security engineers and bug bounty hunters. Provide the package name of an app installed on a connected device or emulator, and Thorfinn analyzes it for client-side vulnerabilities, then validates high-confidence findings through LLM-assisted dynamic testing.
+Thorfinn is an automated Dynamic Application Security Testing framework for Android apps. Given an Android APK, the framework can identify complex Android client-side vulnerabilities, including WebView hijacking, intent redirection, and more, by reversing the APK and tracing taint flows between researched sources and sinks.
 
 Unlike scanners that report isolated risky patterns or rely on generic dynamic payloads, Thorfinn traces attacker-controlled data across classes and Android-specific flows such as intents, extras, deep links, `startActivity()`, and component transitions. It supports configurable sources and sinks, pattern-based checks for common misconfigurations and hardcoded secrets, and Manifest auditing for meaningful permission and component exposure issues.
 
@@ -85,7 +92,7 @@ java -jar target/Thorfinn.jar com.target.app --config config/config.yml --time-l
 
 ### Configuration
 
-After setup, create a config `config.yml`:
+After setup, edit the config at `config/config.yml`:
 
 ```yaml
 toolsConfig:
@@ -116,7 +123,7 @@ pathConfigs:
 ## Usage
 
 ```
-java -jar target/Thorfinn.jar <package-name> --config <path> [options]
+java -jar target/Thorfinn.jar <package-name> --config config/config.yml or <custom path> [options]
 
 Arguments:
   <package-name>              Android package name of the target app (must be installed on connected device)
@@ -179,18 +186,18 @@ java -jar target/Thorfinn.jar com.target.app --config config/config.yml --skip-v
 
 ```mermaid
 flowchart TD
-    A["📱 Pull APK from Device"] --> B["💻 Decompile (JADX / APKTool)"]
-    B --> C["📋 Manifest Analysis"]
-    C --> D["🔍 Run Tools"]
-
+    A["Pull APK from Device"] --> B["Decompile (JADX / APKTool)"]
+    B --> C["Manifest Analysis"]
+    C --> D["Vulnerability Analyzers"]
+    
     D --> E1["Tai-e"] & E2["Semgrep"] & E3["TruffleHog"] & E4["PermissionChecker"]
-
-    E1 & E2 & E3 & E4 --> F["🤖 LLM Triage"]
-
+    
+    E1 & E2 & E3 & E4 --> F["LLM Triage"]
+    
     F -->|True Positive| G["⚡ Generate & Verify POC"]
-    F -->|False Positive| X["❌ Dropped"]
-
-    G --> H["📊 HTML Report"]
+    F -->|False Positive| X["Dropped"]
+    
+    G --> H["HTML Report"]
 ```
 
 ## Final Report

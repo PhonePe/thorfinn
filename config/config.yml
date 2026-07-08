@@ -1,0 +1,23 @@
+toolsConfig:
+  decompilers: jadx
+  analysisTools:
+    - taie
+    - semgrep
+    - permissionChecker
+    - truffleHog
+  llmApiKey: YOUR_API_KEY
+  llmModel: gpt-4
+  llmBaseUrl: https://api.openai.com/v1
+  taiEAgentEnabled: false                 # flip to true if you reach input token limit in direct flow or else keep it false
+  taiEAgentMaxToolResponsePercentage: 30 # Max context % for agent tool responses
+
+pathConfigs:
+  baseDirectory: BASE_DIRECTORY_FOR_PROJECT
+  decompiledApkPath: /resources/decompiled_apks/
+  taiePath: /resources/tools/tai-e-all-0.5.4-SNAPSHOT.jar
+  androidPlatformsPath: /resources/android-platforms/
+  taieOutputPath: /resources/taie_output/
+  taintConfigPath: /config/taint_config.yml
+  permissionCheckerPath: /resources/tools/permissionChecker.py
+  semgrepRulesPath: /resources/tools/semgrep-rules/
+  outputPath: /resources/output/

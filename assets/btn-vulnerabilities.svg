@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="40" role="img" aria-label="Vulnerabilities">
+  <rect x="0.5" y="0.5" width="159" height="39" rx="6" fill="#0d0d0d" stroke="#d8c8b8" stroke-opacity="0.35"/>
+  <text x="80" y="25" fill="#d8c8b8" font-family="'Segoe UI',Helvetica,Arial,sans-serif" font-size="14" font-weight="600" letter-spacing="0.5" text-anchor="middle">Vulnerabilities</text>
+</svg>
+
