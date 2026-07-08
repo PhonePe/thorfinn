@@ -41,7 +41,7 @@ For all true positive findings, Thorfinn uses the complete taint path and applic
 
 ## Demo
 
-![Demo](./assets/demo.gif)
+![Demo](./assets/tooldemo.gif)
 
 
 ## Vulnerabilities Identified
