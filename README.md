@@ -133,6 +133,9 @@ Options:
 
 Thorfinn requires a configuration file for LLM settings, taint rules, tool paths, and verification options. Pass it using the --config flag; relative paths are resolved from the current working directory.
 
+> [!TIP]
+> If the target app is large, and you run out of heap space during taint analysis, use the `--time-limit` option to limit the time spent on propagation. This will reduce the number of findings as application propogation is cut short, but issues will be discovered on the paths that have been fully analyzed.
+
 
 ## POC Verification (LLM-generated commands)
 
