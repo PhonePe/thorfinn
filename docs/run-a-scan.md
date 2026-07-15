@@ -35,6 +35,7 @@ toolsConfig:
   llmBaseUrl: https://api.openai.com/v1
   taiEAgentEnabled: false                 # flip to true if you reach input token limit in direct flow or else keep it false
   taiEAgentMaxToolResponsePercentage: 30 # Max context % for agent tool responses
+  taiEMaxHeapGb: 0                        # Specify heap size here, defaults to 75% of available memory if 0
 
 pathConfigs:
   baseDirectory: BASE_DIRECTORY_FOR_PROJECT
@@ -53,7 +54,7 @@ pathConfigs:
 **toolsConfig**
 
 | Field | Description |
-|---|---|
+|---|--|
 | `decompilers` | Which decompiler to use. `jadx` produces Java source (recommended). `apktool` produces smali and decoded resources. |
 | `analysisTools` | List of tools to run. Remove a tool from the list to skip it. Order is preserved. |
 | `llmApiKey` | API key for the LLM provider. Required for false positive filtering and POC generation. |
@@ -61,6 +62,7 @@ pathConfigs:
 | `llmBaseUrl` | Base URL of the LLM API endpoint. Works with any OpenAI-compatible API. |
 | `taiEAgentEnabled` | When `true`, the LLM can search the decompiled codebase on-demand for deeper analysis. When `false`, all code context is inlined in a single prompt. |
 | `taiEAgentMaxToolResponsePercentage` | In agent mode, limits how much of the context window tool responses can consume. |
+| `taiEMaxHeapGb` | taiEMaxHeapGb is the maximum heap size for Tai-e analysis. If zero is will calculate the 75% of available memory and use that as the heap size. |
 
 **pathConfigs**
 
