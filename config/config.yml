@@ -10,6 +10,7 @@ toolsConfig:
   llmBaseUrl: https://api.openai.com/v1
   taiEAgentEnabled: false                 # flip to true if you reach input token limit in direct flow or else keep it false
   taiEAgentMaxToolResponsePercentage: 30 # Max context % for agent tool responses
+  taiEMaxHeapGb: 0                        # Specify heap size here, defaults to 75% of available memory if 0
 
 pathConfigs:
   baseDirectory: BASE_DIRECTORY_FOR_PROJECT

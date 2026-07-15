@@ -17,10 +17,27 @@ public class TaiE implements Tools {
     @Override
     public void execute() throws Exception {
         int timeLimit = ConfigContext.getConfig().getToolsConfig().getCpgTimeLimit();
+        int maxHeapGb = resolveMaxHeapGb();
         log.info("[*] TaiE CPG time-limit: {}s", timeLimit);
-        String result = CommandRunner.run("java -Xmx16g -XX:+UseG1GC -jar " + PathUtils.getTaiEPath() + " -pp -am -ajs " + PathUtils.getAndroidPlatformsPath() + " -cp " + PathUtils.getApkPath() + " --output-dir " + PathUtils.getTaiEOutputPath() + " -a \"pta=merge-string-objects:true;merge-string-builders:true;merge-exception-objects:true;implicit-entries:false;propagate-types:[reference,int,long,double,char,float];taint-config:" + PathUtils.getTaintConfigPath() + ";distinguish-string-constants:app;reflection-inference:string-constant;time-limit:" + timeLimit + ";\"");
+        log.info("[*] TaiE JVM max heap: {}g", maxHeapGb);
+        String result = CommandRunner.run("java -Xmx" + maxHeapGb + "g -XX:+UseG1GC -jar " + PathUtils.getTaiEPath() + " -pp -am -ajs " + PathUtils.getAndroidPlatformsPath() + " -cp " + PathUtils.getApkPath() + " --output-dir " + PathUtils.getTaiEOutputPath() + " -a \"pta=merge-string-objects:true;merge-string-builders:true;merge-exception-objects:true;implicit-entries:false;propagate-types:[reference,int,long,double,char,float];taint-config:" + PathUtils.getTaintConfigPath() + ";distinguish-string-constants:app;reflection-inference:string-constant;time-limit:" + timeLimit + ";\"");
 
         saveOutputToFile(result);
+    }
+    private int resolveMaxHeapGb() {
+        int configured = ConfigContext.getConfig().getToolsConfig().getTaiEMaxHeapGb();
+        if (configured > 0) {
+            return configured;
+        }
+
+        java.lang.management.OperatingSystemMXBean osBean =
+                java.lang.management.ManagementFactory.getOperatingSystemMXBean();
+        if (osBean instanceof com.sun.management.OperatingSystemMXBean sunOsBean) {
+            long totalGb = sunOsBean.getTotalMemorySize() / (1024L * 1024L * 1024L);
+            return (int) (totalGb * 3 / 4);
+        }
+        throw new IllegalStateException(
+                "Could not auto-detect physical memory for Tai-e heap sizing; set taiEMaxHeapGb in config.");
     }
 
     private void saveOutputToFile(String output) {

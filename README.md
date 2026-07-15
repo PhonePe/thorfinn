@@ -102,6 +102,7 @@ toolsConfig:
   llmBaseUrl: https://api.openai.com/v1
   taiEAgentEnabled: false                 # flip to true if you reach input token limit in direct flow or else keep it false
   taiEAgentMaxToolResponsePercentage: 30 # Max context % for agent tool responses
+  taiEMaxHeapGb: 0                        # Specify heap size here, defaults to 75% of available memory if 0
 
 pathConfigs:
   baseDirectory: BASE_DIRECTORY_FOR_PROJECT
@@ -114,6 +115,10 @@ pathConfigs:
   semgrepRulesPath: /resources/tools/semgrep-rules/
   outputPath: /resources/output/
 ```
+
+> [!TIP]
+> taiEMaxHeapGb is the maximum heap size for Tai-e analysis. If zero is will calculate the 75% of available memory and use that as the heap size.
+
 
 ## Usage
 
