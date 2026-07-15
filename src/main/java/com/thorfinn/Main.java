@@ -6,7 +6,7 @@ import com.thorfinn.verification.PocApprovalMode;
 
 public class Main {
 
-    private static final int DEFAULT_TIME_LIMIT = 3000;
+    private static final int DEFAULT_TIME_LIMIT = 30000;
 
     public static void main(String[] args) throws Exception {
         if (args.length < 1 || "-h".equals(args[0]) || "--help".equals(args[0])) {

@@ -16,8 +16,25 @@ public class CommandRunner {
     private static final Pattern PACKAGE_NAME_PATTERN =
             Pattern.compile("^[a-zA-Z][a-zA-Z0-9_]*(\\.[a-zA-Z][a-zA-Z0-9_]*)+$");
 
+    private static final List<Pattern> SUPPRESSED_LOG_PATTERNS = List.of(
+            Pattern.compile("Unsupported ResTable entry flags encountered"),
+            Pattern.compile("Failed to build class")
+    );
+
     private CommandRunner() {
 
+    }
+
+    private static boolean isSuppressedLogLine(String line) {
+        if (line == null) {
+            return false;
+        }
+        for (Pattern p : SUPPRESSED_LOG_PATTERNS) {
+            if (p.matcher(line).find()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static void validatePackageName(String packageName) {
@@ -40,7 +57,9 @@ public class CommandRunner {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    log.info("[stdout] {}", line);
+                    if (!isSuppressedLogLine(line)) {
+                        log.info("[stdout] {}", line);
+                    }
                     synchronized (output) {
                         output.append(line).append("\n");
                     }
@@ -54,7 +73,9 @@ public class CommandRunner {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    log.warn("[stderr] {}", line);
+                    if (!isSuppressedLogLine(line)) {
+                        log.warn("[stderr] {}", line);
+                    }
                     synchronized (output) {
                         output.append(line).append("\n");
                     }
@@ -143,7 +164,9 @@ public class CommandRunner {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    log.info("[stdout] {}", line);
+                    if (!isSuppressedLogLine(line)) {
+                        log.info("[stdout] {}", line);
+                    }
                     synchronized (output) {
                         output.append(line).append("\n");
                     }
@@ -157,7 +180,9 @@ public class CommandRunner {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    log.warn("[stderr] {}", line);
+                    if (!isSuppressedLogLine(line)) {
+                        log.warn("[stderr] {}", line);
+                    }
                     synchronized (output) {
                         output.append(line).append("\n");
                     }
@@ -263,24 +288,20 @@ public class CommandRunner {
     static boolean isProtectedDirectory(Path folder) {
         Path abs;
         try {
-            // Resolve symlinks and normalize (e.g. collapse "/foo/.." → "/").
+
             abs = folder.toRealPath();
         } catch (Exception e) {
             abs = folder.toAbsolutePath().normalize();
         }
 
-        // Filesystem root (e.g. "/") has zero name elements.
+
         if (abs.getNameCount() == 0 || abs.getParent() == null) {
             return true;
         }
 
-        // Require at least two path segments so a single top-level dir (e.g. "/output",
-        // "/Users") can never be wiped.
         if (abs.getNameCount() < 2) {
             return true;
         }
-
-        // Never clean the user's home directory or the current working directory itself.
         Path home = Path.of(System.getProperty("user.home", "")).toAbsolutePath().normalize();
         Path cwd = Path.of(System.getProperty("user.dir", "")).toAbsolutePath().normalize();
         return abs.equals(home) || abs.equals(cwd);
