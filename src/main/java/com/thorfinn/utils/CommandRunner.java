@@ -96,7 +96,7 @@ public class CommandRunner {
 
         if (exitCode != 0) {
             log.error("[!] Command failed with exit code: {}", exitCode);
-            throw new RuntimeException("Command failed (exit code " + exitCode + "): " + command + "\n" + result);
+            throw new RuntimeException("Command failed (exit code " + exitCode + "): " + command);
         }
 
         log.info("[*] Command exited with code: {}", exitCode);
@@ -203,7 +203,7 @@ public class CommandRunner {
 
         if (exitCode != 0) {
             log.error("[!] Command failed with exit code: {}", exitCode);
-            throw new RuntimeException("Command failed (exit code " + exitCode + "): " + command + "\n" + result);
+            throw new RuntimeException("Command failed (exit code " + exitCode + "): " + command);
         }
 
         log.info("[*] Command exited with code: {}", exitCode);
