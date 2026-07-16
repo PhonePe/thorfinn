@@ -77,6 +77,7 @@ vim config/config.yml
 
 # plug in a device and go (--config is required)
 adb devices
+# verify you have device running with target apk installed
 java -jar target/Thorfinn.jar com.target.app --config config/config.yml
 
 # big app? running out of heap space limit time for propogation
@@ -99,7 +100,7 @@ toolsConfig:
     - truffleHog
   llmApiKey: Bearer YOUR_API_KEY          # Add token with scheme e.g Bearer
   llmModel: gpt-4
-  llmBaseUrl: https://api.openai.com/
+  llmBaseUrl: https://api.openai.com
   taiEAgentEnabled: false                 # flip to true if you reach input token limit in direct flow or else keep it false
   taiEAgentMaxToolResponsePercentage: 30 # Max context % for agent tool responses
   taiEMaxHeapGb: 0                        # Specify heap size here, defaults to 75% of available memory if 0
