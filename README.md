@@ -72,7 +72,7 @@ git clone https://github.com/PhonePe/Thorfinn.git --recurse-submodules
 cd Thorfinn
 ./setup.sh
 
-# add your LLM key
+# add your LLM key and base directory for the project
 vim config/config.yml
 
 # plug in a device and go (--config is required)
@@ -106,7 +106,7 @@ toolsConfig:
   taiEMaxHeapGb: 0                        # Specify heap size here, defaults to 75% of available memory if 0
 
 pathConfigs:
-  baseDirectory: BASE_DIRECTORY_FOR_PROJECT
+  baseDirectory: BASE_DIRECTORY_FOR_PROJECT # Replace this with your base directory path for the project
   decompiledApkPath: /resources/decompiled_apks/
   taiePath: /resources/tools/tai-e-all-0.5.4-SNAPSHOT.jar
   androidPlatformsPath: /resources/android-platforms/
