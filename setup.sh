@@ -59,13 +59,15 @@ install_pkg() {
 }
 
 ensure_java() {
-    if command_exists java; then
+    if command_exists java && java -version >/dev/null 2>&1; then
         JAVA_VER=$(java -version 2>&1 | head -1 | awk -F '"' '{print $2}' | cut -d. -f1)
-        if [[ "$JAVA_VER" -ge 17 ]]; then
+        if [[ "$JAVA_VER" =~ ^[0-9]+$ ]] && [[ "$JAVA_VER" -ge 17 ]]; then
             success "Java $JAVA_VER is already installed"
             return
         fi
-        warn "Java $JAVA_VER found, but Java 17+ is required"
+        warn "Java ${JAVA_VER:-unknown} found, but Java 17+ is required"
+    else
+        warn "No working Java runtime found"
     fi
 
     info "Installing Java 17 (Temurin)..."
@@ -80,6 +82,10 @@ ensure_java() {
             sudo apt-get install -y temurin-17-jdk
         }
     fi
+
+    if ! java -version >/dev/null 2>&1; then
+        error "Java 17 was installed but no working 'java' runtime is on PATH. Open a new terminal (or set JAVA_HOME) and re-run ./setup.sh"
+    fi
     success "Java 17 installed"
 }
 
@@ -92,16 +98,19 @@ ensure_maven() {
 }
 
 ensure_python() {
-    if command_exists python3; then
-        success "Python3 is already installed ($(python3 --version))"
+    if command_exists python3 && python3 --version >/dev/null 2>&1; then
+        success "Python3 is already installed ($(python3 --version 2>&1))"
     else
+        warn "No working Python3 runtime found"
         install_pkg python3 python3 python3
     fi
 
-    if ! command_exists pip3; then
+    if ! command_exists pip3 || ! pip3 --version >/dev/null 2>&1; then
         info "Installing pip3..."
         if [[ "$OS" == "linux" ]]; then
             sudo apt-get install -y python3-pip
+        elif [[ "$OS" == "macos" ]]; then
+            python3 -m ensurepip --upgrade 2>/dev/null || true
         fi
     fi
 }
