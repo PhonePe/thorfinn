@@ -27,7 +27,7 @@ After setup completes, the generated fat JAR is available at:
 target/Thorfinn.jar
 ```
 
-You can run it against any installed Android package:
+You can run it against any installed Android package just attach a device or emulator and execute:
 
 ```bash
 java -jar target/Thorfinn.jar <package-name> --config config/config.yml
@@ -41,7 +41,7 @@ After completing the automated setup, you can make code changes and rebuild Thor
 mvn clean package -DskipTests
 ```
 
-Run the updated JAR against any installed Android package:
+Run the updated JAR against any installed Android package after attaching a device or emulator:
 
 ```bash
 java -jar target/Thorfinn.jar <package-name> --config config/config.yml
