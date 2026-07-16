@@ -13,7 +13,6 @@ import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 public final class TaiEAgentSetupFactory {
 
@@ -34,7 +33,7 @@ public final class TaiEAgentSetupFactory {
         var simpleOpenAI = SimpleOpenAI.builder()
                 .baseUrl(baseUrl)
                 .apiKey(apiKey)
-                .clientAdapter(new OBearerJavaHttpClientAdapter())
+                .clientAdapter(new ConfiguredAuthHttpClientAdapter(apiKey))
                 .objectMapper(mapper)
                 .build();
 
@@ -64,13 +63,16 @@ public final class TaiEAgentSetupFactory {
         return value;
     }
 
-    private static final class OBearerJavaHttpClientAdapter extends JavaHttpClientAdapter {
+    private static final class ConfiguredAuthHttpClientAdapter extends JavaHttpClientAdapter {
 
-        OBearerJavaHttpClientAdapter() {
+        private final String authorizationValue;
+
+        ConfiguredAuthHttpClientAdapter(String authorizationValue) {
             super(HttpClient.newBuilder()
                     .version(HttpClient.Version.HTTP_1_1)
                     .connectTimeout(Duration.ofSeconds(30))
                     .build());
+            this.authorizationValue = authorizationValue;
         }
 
         @Override
@@ -97,13 +99,8 @@ public final class TaiEAgentSetupFactory {
                     continue;
                 }
                 if (i % 2 == 0 && "authorization".equalsIgnoreCase(entry.trim()) && i + 1 < headers.size()) {
-                    String value = headers.get(i + 1);
                     updated.add(entry);
-                    if (value != null && value.toLowerCase(Locale.ROOT).startsWith("bearer ")) {
-                        updated.add("O-Bearer " + value.substring("bearer ".length()));
-                    } else {
-                        updated.add(value);
-                    }
+                    updated.add(authorizationValue);
                     i++;
                 } else {
                     updated.add(entry);

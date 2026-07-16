@@ -51,7 +51,7 @@ public class LLMClient {
 
         Request request = new Request.Builder()
                 .url(buildChatCompletionsUrl(baseUrl))
-                .addHeader("Authorization", "O-Bearer " + apiKey)
+                .addHeader("Authorization", apiKey)
                 .addHeader("Content-Type", "application/json")
                 .post(RequestBody.create(requestBody.toString(), JSON))
                 .build();

@@ -97,9 +97,9 @@ toolsConfig:
     - semgrep
     - permissionChecker
     - truffleHog
-  llmApiKey: YOUR_API_KEY
+  llmApiKey: Bearer YOUR_API_KEY          # Add token with scheme e.g Bearer
   llmModel: gpt-4
-  llmBaseUrl: https://api.openai.com/v1
+  llmBaseUrl: https://api.openai.com/
   taiEAgentEnabled: false                 # flip to true if you reach input token limit in direct flow or else keep it false
   taiEAgentMaxToolResponsePercentage: 30 # Max context % for agent tool responses
   taiEMaxHeapGb: 0                        # Specify heap size here, defaults to 75% of available memory if 0
