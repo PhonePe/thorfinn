@@ -38,7 +38,7 @@ toolsConfig:
   taiEMaxHeapGb: 0                        # Specify heap size here, defaults to 75% of available memory if 0
 
 pathConfigs:
-  baseDirectory: BASE_DIRECTORY_FOR_PROJECT # Replace this with your base directory path for the project
+  baseDirectory: BASE_DIRECTORY_FOR_THORFINN # Replace this with your base directory path for thorfinn
   decompiledApkPath: /resources/decompiled_apks/
   taiePath: /resources/tools/tai-e-all-0.5.4-SNAPSHOT.jar
   androidPlatformsPath: /resources/android-platforms/
