@@ -9,6 +9,10 @@ NC='\033[0m'
 
 THORFINN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+VENV_DIR="$THORFINN_DIR/.venv"
+VENV_PY="$VENV_DIR/bin/python"
+VENV_PIP="$VENV_DIR/bin/pip"
+
 info()    { echo -e "${CYAN}[*]${NC} $1"; }
 success() { echo -e "${GREEN}[✓]${NC} $1"; }
 warn()    { echo -e "${YELLOW}[!]${NC} $1"; }
@@ -113,6 +117,38 @@ ensure_python() {
             python3 -m ensurepip --upgrade 2>/dev/null || true
         fi
     fi
+
+    if [[ "$OS" == "linux" ]]; then
+        if ! python3 -m venv --help >/dev/null 2>&1; then
+            info "Installing python3-venv..."
+            sudo apt-get install -y python3-venv
+        fi
+    fi
+}
+
+ensure_venv() {
+    if [[ -x "$VENV_PY" ]]; then
+        success "Python virtual environment already exists (.venv)"
+    else
+        info "Creating Python virtual environment at .venv..."
+        python3 -m venv "$VENV_DIR" || error "Failed to create virtualenv. On Debian/Ubuntu run: sudo apt-get install -y python3-venv, then re-run ./setup.sh"
+        success "Virtual environment created (.venv)"
+    fi
+    info "Upgrading pip inside the virtual environment..."
+    "$VENV_PY" -m pip install --upgrade pip -q || warn "Could not upgrade pip inside the venv (continuing)"
+}
+
+link_venv_binary() {
+    local bin_name="$1"
+    local src="$VENV_DIR/bin/$bin_name"
+    [[ -x "$src" ]] || error "$bin_name was not found in the venv at $src"
+    local target="/usr/local/bin/$bin_name"
+    if ln -sf "$src" "$target" 2>/dev/null; then
+        success "Linked $bin_name -> $target"
+    else
+        sudo ln -sf "$src" "$target"
+        success "Linked $bin_name -> $target (with sudo)"
+    fi
 }
 
 ensure_adb() {
@@ -152,9 +188,10 @@ ensure_semgrep() {
         success "Semgrep is already installed ($(semgrep --version))"
         return
     fi
-    info "Installing Semgrep..."
-    pip3 install semgrep
-    success "Semgrep installed"
+    info "Installing Semgrep into the virtual environment..."
+    "$VENV_PY" -m pip install -q semgrep || error "Failed to install semgrep into the venv"
+    link_venv_binary semgrep
+    success "Semgrep installed ($("$VENV_DIR/bin/semgrep" --version 2>/dev/null || echo 'venv'))"
 }
 
 ensure_trufflehog() {
@@ -257,6 +294,7 @@ main() {
     ensure_java
     ensure_maven
     ensure_python
+    ensure_venv
     ensure_adb
     ensure_jadx
     ensure_semgrep
