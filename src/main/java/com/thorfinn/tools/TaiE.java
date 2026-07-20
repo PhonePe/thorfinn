@@ -18,9 +18,11 @@ public class TaiE implements Tools {
     public void execute() throws Exception {
         int timeLimit = ConfigContext.getConfig().getToolsConfig().getCpgTimeLimit();
         int maxHeapGb = resolveMaxHeapGb();
+        boolean onlyApp = ConfigContext.getConfig().getToolsConfig().isTaiEOnlyApp();
         log.info("[*] TaiE CPG time-limit: {}s", timeLimit);
         log.info("[*] TaiE JVM max heap: {}g", maxHeapGb);
-        String result = CommandRunner.run("java -Xmx" + maxHeapGb + "g -XX:+UseG1GC -jar " + PathUtils.getTaiEPath() + " -pp -am -ajs " + PathUtils.getAndroidPlatformsPath() + " -cp " + PathUtils.getApkPath() + " --output-dir " + PathUtils.getTaiEOutputPath() + " -a \"pta=merge-string-objects:true;merge-string-builders:true;merge-exception-objects:true;implicit-entries:false;propagate-types:[reference,int,long,double,char,float];taint-config:" + PathUtils.getTaintConfigPath() + ";distinguish-string-constants:app;reflection-inference:string-constant;time-limit:" + timeLimit + ";\"");
+        log.info("[*] TaiE only-app (application-code-only pointer analysis): {}", onlyApp);
+        String result = CommandRunner.run("java -Xmx" + maxHeapGb + "g -XX:+UseG1GC -jar " + PathUtils.getTaiEPath() + " -pp -am -ajs " + PathUtils.getAndroidPlatformsPath() + " -cp " + PathUtils.getApkPath() + " --output-dir " + PathUtils.getTaiEOutputPath() + " -a \"pta=only-app:" + onlyApp + ";merge-string-objects:true;merge-string-builders:true;merge-exception-objects:true;implicit-entries:false;propagate-types:[reference,int,long,double,char,float];taint-config:" + PathUtils.getTaintConfigPath() + ";distinguish-string-constants:app;reflection-inference:string-constant;time-limit:" + timeLimit + ";\"");
 
         saveOutputToFile(result);
     }

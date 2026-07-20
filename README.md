@@ -104,6 +104,7 @@ toolsConfig:
   taiEAgentEnabled: false                 # flip to true if you reach input token limit in direct flow or else keep it false
   taiEAgentMaxToolResponsePercentage: 30 # Max context % for agent tool responses
   taiEMaxHeapGb: 0                        # Specify heap size here, defaults to 75% of available memory if 0
+  taiEOnlyApp: true                      # true = taint analysis only app code including everything bundled into it sdk etc. ; false = whole-program including reading their bodies as well
 
 pathConfigs:
   baseDirectory: BASE_DIRECTORY_FOR_THORFINN # Replace this with your base directory path for thorfinn
@@ -118,7 +119,8 @@ pathConfigs:
 ```
 
 > [!TIP]
-> taiEMaxHeapGb is the maximum heap size for Tai-e analysis. If zero is will calculate the 75% of available memory and use that as the heap size.
+> `taiEMaxHeapGb` is the maximum heap size for Tai-e analysis. If zero is will calculate the 75% of available memory and use that as the heap size.
+
 
 
 ## Usage
@@ -140,7 +142,8 @@ Options:
 Thorfinn requires a configuration file for LLM settings, taint rules, tool paths, and verification options. Pass it using the --config flag; relative paths are resolved from the current working directory.
 
 > [!TIP]
-> If the target app is large, and you run out of heap space during taint analysis, use the `--time-limit` option to limit the time spent on propagation. This will reduce the number of findings as application propogation is cut short, but issues will be discovered on the paths that have been fully analyzed.
+> By default true makes taint analysis only analyze the app code and everything bundled into it (e.g. SDKs). If you want to analyze the whole program including reading their bodies as well, set `taiEOnlyApp` to false in config.yml but this causes issues on larger APKs.
+> If the target app is large, and you run out of heap space during taint analysis, use the `--time-limit` option to limit the time spent on propgation.This will reduce the number of findings as application propagation is cut short, but issues will be discovered on the paths that have been fully analyzed.
 
 
 ## POC Verification (LLM-generated commands)

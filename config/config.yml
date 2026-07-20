@@ -11,6 +11,7 @@ toolsConfig:
   taiEAgentEnabled: false                 # flip to true if you reach input token limit in direct flow or else keep it false
   taiEAgentMaxToolResponsePercentage: 30 # Max context % for agent tool responses
   taiEMaxHeapGb: 0                        # Specify heap size here, defaults to 75% of available memory if 0
+  taiEOnlyApp: true                      # true = taint analysis only app code including everything bundled into it sdk etc. ; false = whole-program including reading their bodies as well
 
 pathConfigs:
   baseDirectory: BASE_DIRECTORY_FOR_PROJECT # Replace this with your base directory path for the project

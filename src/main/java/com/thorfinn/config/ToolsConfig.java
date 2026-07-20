@@ -15,5 +15,6 @@ public class ToolsConfig {
     private int taiEAgentMaxToolResponsePercentage;
     private int cpgTimeLimit;
     private int taiEMaxHeapGb;
+    private boolean taiEOnlyApp;
     private List<String> ignoredPackages;
 }
