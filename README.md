@@ -124,7 +124,7 @@ pathConfigs:
 > [!IMPORTANT]
 > * `taiEMaxHeapGb` is the maximum heap size for Tai-e analysis. If zero, it will calculate the 75% of available memory and use that as the heap size.
 > * `ignoredPackages` is a list of packages that you may want to ignore from verification due to being 3rd party or false positives.
-> * `taiEOnlyApp` by default true makes taint analysis only analyze the app code and everything bundled into it (e.g. SDKs). If you want to analyze the whole program including reading their bodies as well, set `taiEOnlyApp` to false in config.yml but this causes issues on larger APKs.
+> * `taiEOnlyApp` by default true (strongly recommended for big applications) makes taint analysis only analyze the app code and everything bundled into it (e.g. SDKs). If you want to analyze the whole program including reading their bodies as well, set `taiEOnlyApp` to false in config.yml but this causes issues on larger APKs.
 
 
 
