@@ -3,8 +3,10 @@ package com.thorfinn.poc;
 import com.phonepe.sentinelai.core.agent.AgentInput;
 import com.phonepe.sentinelai.core.agent.AgentOutput;
 import com.phonepe.sentinelai.core.errors.ErrorType;
+import com.phonepe.sentinelai.core.model.ModelUsageStats;
 import com.thorfinn.config.ToolsConfig;
 import com.thorfinn.models.TaiEAgentModels;
+import com.thorfinn.utils.TokenUsageTracker;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -27,6 +29,8 @@ public class TaiEAgentRunner {
             throw new IllegalStateException("TaiE agent returned null output");
         }
 
+        recordUsage(output.getUsage());
+
         if (output.getError() != null && output.getError().getErrorType() != ErrorType.SUCCESS) {
             log.error("[TaiEAgentRunner] Agent failure type={} message={}",
                     output.getError().getErrorType(), output.getError().getMessage());
@@ -47,5 +51,17 @@ public class TaiEAgentRunner {
         }
 
         return response;
+    }
+
+    private void recordUsage(ModelUsageStats usage) {
+        if (usage == null) {
+            TokenUsageTracker.recordUnreported("agent");
+            return;
+        }
+        TokenUsageTracker.record(
+                "agent",
+                usage.getRequestTokens(),
+                usage.getResponseTokens(),
+                usage.getTotalTokens());
     }
 }

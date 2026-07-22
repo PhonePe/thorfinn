@@ -24,6 +24,7 @@ import com.thorfinn.tools.TruffleHog;
 import com.thorfinn.tools.Tools;
 import com.thorfinn.utils.CommandRunner;
 import com.thorfinn.utils.PathUtils;
+import com.thorfinn.utils.TokenUsageTracker;
 import com.thorfinn.utils.VersionInfo;
 import com.thorfinn.verification.AdbVerifier;
 import com.thorfinn.verification.PocApprovalMode;
@@ -81,6 +82,7 @@ public class  Orchestrator {
         JsonReportGenerator jsonReportGenerator = new JsonReportGenerator();
         jsonReportGenerator.generateReport(results, manifestInfo);
         log.info("[*] Pipeline complete. Total confirmed findings: {}, Verified: {}", allFindings.size(), results.size());
+        TokenUsageTracker.logScanUsage();
     }
 
     private void printBanner() {

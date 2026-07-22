@@ -15,6 +15,7 @@ public class LLMClient {
 
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     private static final String CHAT_COMPLETIONS_ENDPOINT = "/v1/chat/completions";
+
     private final String apiKey;
     private final String model;
     private final String baseUrl;
@@ -76,9 +77,27 @@ public class LLMClient {
                     .getAsJsonObject("message")
                     .get("content").getAsString();
 
+            logTokenUsage(json);
             log.info("[*] LLM response received ({} chars)", content.length());
             return content;
         }
+    }
+
+    private void logTokenUsage(JsonObject json) {
+        if (json == null || !json.has("usage") || json.get("usage").isJsonNull()) {
+            TokenUsageTracker.recordUnreported("chat");
+            return;
+        }
+        JsonObject usage = json.getAsJsonObject("usage");
+        TokenUsageTracker.record("chat",
+                readLong(usage, "prompt_tokens"),
+                readLong(usage, "completion_tokens"),
+                readLong(usage, "total_tokens"));
+    }
+
+    private long readLong(JsonObject obj, String key) {
+        return obj.has(key) && !obj.get(key).isJsonNull()
+                ? obj.get(key).getAsLong() : -1;
     }
 
     private String buildChatCompletionsUrl(String configuredBaseUrl) {
