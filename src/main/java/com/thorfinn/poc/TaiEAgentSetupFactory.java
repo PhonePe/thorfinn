@@ -5,6 +5,7 @@ import com.phonepe.sentinelai.core.model.ModelSettings;
 import com.phonepe.sentinelai.core.utils.JsonUtils;
 import com.phonepe.sentinelai.models.SimpleOpenAIModel;
 import com.thorfinn.config.ToolsConfig;
+import com.thorfinn.utils.LlmProviderSupport;
 import io.github.sashirestela.cleverclient.client.JavaHttpClientAdapter;
 import io.github.sashirestela.cleverclient.client.RequestData;
 import io.github.sashirestela.openai.SimpleOpenAI;
@@ -12,7 +13,10 @@ import io.github.sashirestela.openai.SimpleOpenAI;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public final class TaiEAgentSetupFactory {
 
@@ -24,16 +28,20 @@ public final class TaiEAgentSetupFactory {
             throw new IllegalArgumentException("toolsConfig must not be null");
         }
 
+        LlmProviderSupport providerSupport = new LlmProviderSupport(toolsConfig);
+        if (!providerSupport.supportsAgentMode()) {
+            throw new IllegalArgumentException("TaiE agent mode is not supported for provider: " + providerSupport.provider());
+        }
+
         String modelName = requireNonBlank(toolsConfig.getLlmModel(), "llmModel");
-        String baseUrl = requireNonBlank(toolsConfig.getLlmBaseUrl(), "llmBaseUrl");
-        String apiKey = requireNonBlank(toolsConfig.getLlmApiKey(), "llmApiKey");
+        String baseUrl = requireNonBlank(providerSupport.agentBaseUrl(), "agentBaseUrl");
 
         var mapper = JsonUtils.createMapper();
 
         var simpleOpenAI = SimpleOpenAI.builder()
                 .baseUrl(baseUrl)
-                .apiKey(apiKey)
-                .clientAdapter(new ConfiguredAuthHttpClientAdapter(apiKey))
+                .apiKey("placeholder")
+                .clientAdapter(new ConfiguredHeadersHttpClientAdapter(providerSupport))
                 .objectMapper(mapper)
                 .build();
 
@@ -63,50 +71,81 @@ public final class TaiEAgentSetupFactory {
         return value;
     }
 
-    private static final class ConfiguredAuthHttpClientAdapter extends JavaHttpClientAdapter {
+    private static final class ConfiguredHeadersHttpClientAdapter extends JavaHttpClientAdapter {
 
-        private final String authorizationValue;
+        private final LlmProviderSupport providerSupport;
 
-        ConfiguredAuthHttpClientAdapter(String authorizationValue) {
+        ConfiguredHeadersHttpClientAdapter(LlmProviderSupport providerSupport) {
             super(HttpClient.newBuilder()
                     .version(HttpClient.Version.HTTP_1_1)
                     .connectTimeout(Duration.ofSeconds(30))
                     .build());
-            this.authorizationValue = authorizationValue;
+            this.providerSupport = providerSupport;
         }
 
         @Override
         protected Object send(RequestData requestData) {
-            return super.send(rewriteAuthHeader(requestData));
+            return super.send(rewriteHeaders(requestData));
         }
 
         @Override
         protected Object sendAsync(RequestData requestData) {
-            return super.sendAsync(rewriteAuthHeader(requestData));
+            return super.sendAsync(rewriteHeaders(requestData));
         }
 
-        private RequestData rewriteAuthHeader(RequestData requestData) {
-            List<String> headers = requestData.getHeaders();
-            if (headers == null || headers.isEmpty()) {
-                return requestData;
+        private RequestData rewriteHeaders(RequestData requestData) {
+            Map<String, String> desiredHeaders;
+            try {
+                desiredHeaders = providerSupport.requestHeaders();
+            } catch (Exception e) {
+                throw new IllegalStateException("Failed to resolve LLM headers for agent mode", e);
             }
 
-            List<String> updated = new ArrayList<>(headers.size());
-            for (int i = 0; i < headers.size(); i++) {
-                String entry = headers.get(i);
+            List<String> headers = requestData.getHeaders();
+            List<String> source = headers == null ? List.of() : headers;
+
+            List<String> updated = new ArrayList<>(Math.max(source.size(), desiredHeaders.size() * 2));
+            Set<String> seenKeys = new HashSet<>();
+            for (int i = 0; i < source.size(); i++) {
+                String entry = source.get(i);
                 if (entry == null) {
                     updated.add(entry);
                     continue;
                 }
-                if (i % 2 == 0 && "authorization".equalsIgnoreCase(entry.trim()) && i + 1 < headers.size()) {
+
+                if (i % 2 == 0 && i + 1 < source.size()) {
+                    String key = entry.trim();
+                    String matchedKey = findHeaderKey(desiredHeaders, key);
                     updated.add(entry);
-                    updated.add(authorizationValue);
+                    if (matchedKey != null) {
+                        updated.add(desiredHeaders.get(matchedKey));
+                        seenKeys.add(matchedKey.toLowerCase());
+                    } else {
+                        updated.add(source.get(i + 1));
+                    }
                     i++;
                 } else {
                     updated.add(entry);
                 }
             }
+
+            for (Map.Entry<String, String> header : desiredHeaders.entrySet()) {
+                if (!seenKeys.contains(header.getKey().toLowerCase())) {
+                    updated.add(header.getKey());
+                    updated.add(header.getValue());
+                }
+            }
+
             return requestData.withHeaders(updated);
+        }
+
+        private String findHeaderKey(Map<String, String> desiredHeaders, String actualKey) {
+            for (String desired : desiredHeaders.keySet()) {
+                if (desired.equalsIgnoreCase(actualKey)) {
+                    return desired;
+                }
+            }
+            return null;
         }
     }
 }

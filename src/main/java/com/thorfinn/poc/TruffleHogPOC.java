@@ -63,9 +63,7 @@ public class TruffleHogPOC implements poc {
 
         ToolsConfig toolsConfig = ConfigContext.getConfig().getToolsConfig();
         LLMClient llmClient = new LLMClient(
-                toolsConfig.getLlmApiKey(),
-                toolsConfig.getLlmModel(),
-                toolsConfig.getLlmBaseUrl()
+            toolsConfig
         );
 
         TruffleHogParser parser = new TruffleHogParser();

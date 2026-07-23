@@ -1,13 +1,18 @@
 toolsConfig:
+  # Supported provider values:
+  # - github-copilot-cli: local CLI-based provider (requires copilot or gh on PATH)
+  # - openai-compatible : HTTP API provider (requires llmApiKey and llmBaseUrl)
   decompilers: jadx
   analysisTools:
     - taie
     - semgrep
     - permissionChecker
     - truffleHog
-  llmApiKey: Bearer YOUR_API_KEY          # Add token with scheme e.g Bearer
-  llmModel: gpt-4
-  llmBaseUrl: https://api.openai.com
+  llmProvider: github-copilot-cli          # example: github-copilot-cli (or openai-compatible)
+  llmApiKey: ""                           # openai-compatible example: sk-xxxx or Bearer <token>; keep empty for github-copilot-cli
+  llmModel: claude-opus-4.8                # example: claude-opus-4.8, gpt-5, gpt-4.1-mini (must exist in your provider account)
+  llmBaseUrl: ""                          # openai-compatible example: https://api.openai.com ; leave empty for github-copilot-cli
+  llmCliCommand: copilot                   # example: copilot (preferred). alternative: gh (invoked as `gh copilot -- ...`)
   taiEAgentEnabled: false                 # flip to true if you reach input token limit in direct flow or else keep it false
   taiEAgentMaxToolResponsePercentage: 30 # Max context % for agent tool responses
   taiEMaxHeapGb: 0                        # Specify heap size here, defaults to 75% of available memory if 0
@@ -17,7 +22,7 @@ toolsConfig:
     - "com.yourorg.analytics."
 
 pathConfigs:
-  baseDirectory: BASE_DIRECTORY_FOR_PROJECT # Replace this with your base directory path for the project
+  baseDirectory: BASE_DIRECTORY_FOR_PROJECT # example: /Users/ow28236/Tools/thorfinn
   decompiledApkPath: /resources/decompiled_apks/
   taiePath: /resources/tools/tai-e-all-0.5.4-SNAPSHOT.jar
   androidPlatformsPath: /resources/android-platforms/

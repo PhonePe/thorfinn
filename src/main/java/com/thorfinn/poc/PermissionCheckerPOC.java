@@ -82,9 +82,7 @@ public class PermissionCheckerPOC implements poc {
 
         ToolsConfig toolsConfig = ConfigContext.getConfig().getToolsConfig();
         LLMClient llmClient = new LLMClient(
-                toolsConfig.getLlmApiKey(),
-                toolsConfig.getLlmModel(),
-                toolsConfig.getLlmBaseUrl()
+            toolsConfig
         );
 
         PermissionCheckerParser parser = new PermissionCheckerParser();

@@ -8,9 +8,11 @@ import java.util.List;
 public class ToolsConfig {
     private String decompilers;
     private List<String> analysisTools;
+    private String llmProvider;
     private String llmApiKey;
     private String llmModel;
     private String llmBaseUrl;
+    private String llmCliCommand;
     private boolean taiEAgentEnabled;
     private int taiEAgentMaxToolResponsePercentage;
     private int cpgTimeLimit;

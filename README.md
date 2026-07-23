@@ -72,7 +72,7 @@ git clone https://github.com/PhonePe/Thorfinn.git --recurse-submodules
 cd Thorfinn
 ./setup.sh
 
-# add your LLM key and base directory for the project
+# configure your provider and base directory for the project
 vim config/config.yml
 
 # plug in a device and go (--config is required)
@@ -84,11 +84,11 @@ java -jar target/Thorfinn.jar com.target.app --config config/config.yml
 java -jar target/Thorfinn.jar com.target.app --config config/config.yml --time-limit 300
 ```
 
-`setup.sh` handles Java 17, Maven, JADX, Semgrep, TruffleHog, APKTool, ADB, and Python. Works on macOS (Homebrew) and Linux (apt).
+`setup.sh` handles Java 17, Maven, JADX, Semgrep, TruffleHog, APKTool, ADB, Python, and provisioning Android platform 35 into `resources/android-platforms` when `sdkmanager` is available. Works on macOS (Homebrew) and Linux (apt).
 
 ### Configuration
 
-After setup, edit the config at `config/config.yml`:
+After setup, edit `config/config.yml`:
 
 ```yaml
 toolsConfig:
@@ -98,9 +98,11 @@ toolsConfig:
     - semgrep
     - permissionChecker
     - truffleHog
-  llmApiKey: Bearer YOUR_API_KEY          # Add token with scheme e.g Bearer
-  llmModel: gpt-4
-  llmBaseUrl: https://api.openai.com
+  llmProvider: github-copilot-cli         # github-copilot-cli | openai-compatible
+  llmApiKey: ""                          # empty for github-copilot-cli; required for openai-compatible
+  llmModel: claude-opus-4.8
+  llmBaseUrl: ""                         # openai-compatible only (e.g. https://api.openai.com)
+  llmCliCommand: copilot                  # copilot (preferred) or gh
   taiEAgentEnabled: false                 # flip to true if you reach input token limit in direct flow or else keep it false
   taiEAgentMaxToolResponsePercentage: 30 # Max context % for agent tool responses
   taiEMaxHeapGb: 0                        # Specify heap size here, defaults to 75% of available memory if 0
@@ -125,6 +127,64 @@ pathConfigs:
 > * `taiEMaxHeapGb` is the maximum heap size for Tai-e analysis. If zero, it will calculate the 75% of available memory and use that as the heap size.
 > * `ignoredPackages` is a list of packages that you may want to ignore from verification due to being 3rd party or false positives.
 > * `taiEOnlyApp` by default true (strongly recommended for big applications) makes taint analysis only analyze the app code and everything bundled into it (e.g. SDKs). If you want to analyze the whole program including reading their bodies as well, set `taiEOnlyApp` to false in config.yml but this causes issues on larger APKs.
+> * `github-copilot-cli` mode requires a working GitHub Copilot CLI installation and login on the machine running Thorfinn. `copilot` is the preferred command; `gh copilot` can also be used through the wrapper.
+> * TaiE agent mode works with both providers: `openai-compatible` and `github-copilot-cli`.
+> * If TaiE agent initialization fails, Thorfinn automatically falls back to shared chat mode for that flow and continues analysis.
+> * For Android 14/15 era apps, keep `resources/android-platforms/android-35/android.jar` present to avoid TaiE API fallback and class-resolution loss.
+
+### Provider Examples
+
+OpenAI-compatible:
+
+```yaml
+toolsConfig:
+  llmProvider: openai-compatible
+  llmApiKey: Bearer YOUR_OPENAI_COMPATIBLE_TOKEN
+  llmModel: gpt-4.1-mini
+  llmBaseUrl: https://api.openai.com
+  taiEAgentEnabled: true
+```
+
+GitHub Copilot CLI:
+
+```yaml
+toolsConfig:
+  llmProvider: github-copilot-cli
+  llmModel: gpt-5.4
+  llmCliCommand: copilot
+  taiEAgentEnabled: true
+```
+
+`github-copilot-cli` supports both shared chat analysis and TaiE agent mode.
+
+If you prefer the GitHub CLI wrapper instead of the standalone binary, set `llmCliCommand: gh`. Thorfinn will invoke it as `gh copilot -- ...`.
+
+Copilot CLI setup checklist:
+
+```bash
+# 1) command is available on PATH
+command -v copilot
+# or
+command -v gh
+
+# 2) authenticated session exists
+copilot auth status
+# or
+gh auth status
+
+# 3) verify command is callable
+copilot --help
+# or
+gh copilot --help
+```
+
+If you use `llmCliCommand: gh`, make sure `gh copilot` works on your machine before running Thorfinn.
+
+Example real scan:
+
+```bash
+java -jar target/Thorfinn.jar com.target.app --config config/config.yml --skip-verify
+```
 
 
 
@@ -148,7 +208,7 @@ Options:
 Thorfinn requires a configuration file for LLM settings, taint rules, tool paths, and verification options. Pass it using the --config flag; relative paths are resolved from the current working directory.
 
 > [!TIP]
-> If the target app is large, and you run out of heap space during taint analysis, use the `--time-limit` option to limit the time spent on propgation.This will reduce the number of findings as application propagation is cut short, but issues will be discovered on the paths that have been fully analyzed.
+> If the target app is large and you run out of heap space during taint analysis, use `--time-limit` to cap propagation time. This can reduce the number of findings, but issues will still be discovered on fully analyzed paths.
 
 
 ## POC Verification (LLM-generated commands)
@@ -191,6 +251,14 @@ java -jar target/Thorfinn.jar com.target.app --config config/config.yml --auto-a
 # Static findings only, never touch the device with POCs
 java -jar target/Thorfinn.jar com.target.app --config config/config.yml --skip-verify
 ```
+
+## API 35 Compatibility Note
+
+If TaiE logs `Android API version '35' not available, using minApkVersion ...`, ensure this file exists:
+
+`resources/android-platforms/android-35/android.jar`
+
+`setup.sh` now provisions Android platform 35 through `sdkmanager` into `.android-sdk` and copies `android.jar` into `resources/android-platforms/android-35/`.
 
 
 ## How It Works
