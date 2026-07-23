@@ -128,7 +128,8 @@ pathConfigs:
 > * `ignoredPackages` is a list of packages that you may want to ignore from verification due to being 3rd party or false positives.
 > * `taiEOnlyApp` by default true (strongly recommended for big applications) makes taint analysis only analyze the app code and everything bundled into it (e.g. SDKs). If you want to analyze the whole program including reading their bodies as well, set `taiEOnlyApp` to false in config.yml but this causes issues on larger APKs.
 > * `github-copilot-cli` mode requires a working GitHub Copilot CLI installation and login on the machine running Thorfinn. `copilot` is the preferred command; `gh copilot` can also be used through the wrapper.
-> * TaiE agent mode uses the OpenAI-compatible provider path only. It does not run with `github-copilot-cli`.
+> * TaiE agent mode works with both providers: `openai-compatible` and `github-copilot-cli`.
+> * If TaiE agent initialization fails, Thorfinn automatically falls back to shared chat mode for that flow and continues analysis.
 > * For Android 14/15 era apps, keep `resources/android-platforms/android-35/android.jar` present to avoid TaiE API fallback and class-resolution loss.
 
 ### Provider Examples
@@ -151,10 +152,10 @@ toolsConfig:
   llmProvider: github-copilot-cli
   llmModel: gpt-5.4
   llmCliCommand: copilot
-  taiEAgentEnabled: false
+  taiEAgentEnabled: true
 ```
 
-`github-copilot-cli` is suitable for the shared chat analysis path only. If you need TaiE agent mode, use `openai-compatible`.
+`github-copilot-cli` supports both shared chat analysis and TaiE agent mode.
 
 If you prefer the GitHub CLI wrapper instead of the standalone binary, set `llmCliCommand: gh`. Thorfinn will invoke it as `gh copilot -- ...`.
 
