@@ -8,6 +8,8 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 
 THORFINN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ANDROID_PLATFORMS_DIR="$THORFINN_DIR/resources/android-platforms"
+ANDROID_SDK_ROOT_DIR="$THORFINN_DIR/.android-sdk"
 
 VENV_DIR="$THORFINN_DIR/.venv"
 VENV_PY="$VENV_DIR/bin/python"
@@ -165,6 +167,35 @@ ensure_adb() {
     success "ADB installed"
 }
 
+ensure_android_platform_jar() {
+    local api_level="${1:-35}"
+    local target_dir="$ANDROID_PLATFORMS_DIR/android-$api_level"
+    local target_jar="$target_dir/android.jar"
+
+    if [[ -f "$target_jar" ]]; then
+        success "Android platform $api_level is already available in resources/android-platforms"
+        return
+    fi
+
+    if ! command_exists sdkmanager; then
+        warn "sdkmanager not found; skipping Android platform $api_level provisioning"
+        warn "Install Android SDK command-line tools, then run: sdkmanager --sdk_root=$ANDROID_SDK_ROOT_DIR 'platforms;android-$api_level'"
+        return
+    fi
+
+    info "Installing Android platform $api_level with sdkmanager..."
+    mkdir -p "$ANDROID_SDK_ROOT_DIR"
+    yes | sdkmanager --sdk_root="$ANDROID_SDK_ROOT_DIR" "platforms;android-$api_level" >/dev/null
+
+    if [[ ! -f "$ANDROID_SDK_ROOT_DIR/platforms/android-$api_level/android.jar" ]]; then
+        error "Android platform $api_level installation completed but android.jar was not found"
+    fi
+
+    mkdir -p "$target_dir"
+    cp "$ANDROID_SDK_ROOT_DIR/platforms/android-$api_level/android.jar" "$target_jar"
+    success "Android platform $api_level copied to resources/android-platforms"
+}
+
 ensure_jadx() {
     if command_exists jadx; then
         success "JADX is already installed"
@@ -296,6 +327,7 @@ main() {
     ensure_python
     ensure_venv
     ensure_adb
+    ensure_android_platform_jar 35
     ensure_jadx
     ensure_semgrep
     ensure_trufflehog

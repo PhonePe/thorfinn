@@ -1,0 +1,30 @@
+toolsConfig:
+  decompilers: jadx                     # APK decompiler: jadx (source-heavy) or apktool (resource-heavy)
+  analysisTools:
+    - taie                              # Taint flow analysis (may fail on some heavily obfuscated APKs)
+    - semgrep                           # Pattern/static rule checks on decompiled sources
+    - permissionChecker                 # Manifest permission consistency checks
+    - truffleHog                        # Secret scanning in decompiled output
+  llmProvider: github-copilot-cli       # Supported values after cleanup: github-copilot-cli | openai-compatible
+  llmApiKey: ""                         # Keep empty for Copilot CLI. Required only for openai-compatible provider.
+  llmModel: claude-opus-4.8             # Model id passed to Copilot CLI as --model
+  llmBaseUrl: ""                        # For openai-compatible only (example: https://api.openai.com)
+  llmCliCommand: copilot                # copilot (preferred) or gh (Thorfinn runs: gh copilot -- ...)
+  taiEAgentEnabled: false               # Must stay false with Copilot CLI (agent mode is OpenAI-only)
+  taiEAgentMaxToolResponsePercentage: 30 # Context budget limit for agent mode if enabled with openai-compatible
+  taiEMaxHeapGb: 0                      # 0 => auto-calculate 75% of available memory for TaiE JVM
+  taiEOnlyApp: true                     # true => app-focused analysis, better for large APKs
+  ignoredPackages:
+    - "com.example.thirdparty."         # Optional prefixes to skip during verification triage
+    - "com.yourorg.analytics."
+
+pathConfigs:
+  baseDirectory: BASE_DIRECTORY_FOR_PROJECT # Absolute project root path
+  decompiledApkPath: /resources/decompiled_apks/
+  taiePath: /resources/tools/tai-e-all-0.5.4-SNAPSHOT.jar
+  androidPlatformsPath: /resources/android-platforms/ # Must include android-35/android.jar for newer targets
+  taieOutputPath: /resources/taie_output/
+  taintConfigPath: /config/taint_config.yml
+  permissionCheckerPath: /resources/tools/permissionChecker.py
+  semgrepRulesPath: /resources/tools/semgrep-rules/
+  outputPath: /resources/output/

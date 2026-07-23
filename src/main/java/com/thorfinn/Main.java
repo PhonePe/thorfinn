@@ -7,7 +7,6 @@ import com.thorfinn.verification.PocApprovalMode;
 public class Main {
 
     private static final int DEFAULT_TIME_LIMIT = 30000;
-
     public static void main(String[] args) throws Exception {
         if (args.length < 1 || "-h".equals(args[0]) || "--help".equals(args[0])) {
             printHelp();
@@ -17,12 +16,11 @@ public class Main {
             System.out.println("Thorfinn " + VersionInfo.getVersion());
             System.exit(0);
         }
-        String packageName = args[0];
+
         int timeLimit = DEFAULT_TIME_LIMIT;
         String configPath = null;
         PocApprovalMode pocMode = PocApprovalMode.INTERACTIVE;
-
-        for (int i = 1; i < args.length; i++) {
+        for (int i = 0; i < args.length; i++) {
             if (("--time-limit".equals(args[i]) || "-t".equals(args[i])) && i + 1 < args.length) {
                 try {
                     timeLimit = Integer.parseInt(args[++i]);
@@ -44,6 +42,13 @@ public class Main {
             System.exit(1);
         }
 
+        String packageName = args[0];
+        if (packageName.startsWith("-")) {
+            System.err.println("Error: package name is required.");
+            printHelp();
+            System.exit(1);
+        }
+
         Orchestrator orchestrator = new Orchestrator();
         orchestrator.execute(packageName, timeLimit, configPath, pocMode);
     }
@@ -54,7 +59,7 @@ public class Main {
                 Thorfinn %s - Automated Android Client-Side Security Scanner
                 
                 Usage:
-                  java -jar Thorfinn.jar <package-name> --config <path> [options]
+                                    java -jar Thorfinn.jar <package-name> --config <path> [options]
                 
                 Arguments:
                   <package-name>              Android package name of the target app (must be installed on connected device)
