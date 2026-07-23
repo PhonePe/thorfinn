@@ -266,7 +266,7 @@ setup_config() {
         info "Creating config/config.yml from template..."
         cp "$template_file" "$config_file"
         warn "Config created at: $config_file"
-        warn "Please edit config/config.yml to set your LLM API key and base URL"
+        warn "Please edit config/config.yml to configure your LLM provider (github-copilot-cli or openai-compatible)"
     else
         error "Template config not found at: $template_file"
     fi
@@ -307,7 +307,7 @@ print_summary() {
     echo "  Prerequisites before running:"
     echo "    1. Connect an Android device with USB debugging enabled"
     echo "    2. Ensure the target app is installed on the device"
-    echo "    3. Edit config/config.yml with your LLM API key (pass it via --config)"
+    echo "    3. Edit config/config.yml with your provider settings (pass it via --config)"
     echo ""
 }
 

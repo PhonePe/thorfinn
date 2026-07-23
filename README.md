@@ -72,23 +72,23 @@ git clone https://github.com/PhonePe/Thorfinn.git --recurse-submodules
 cd Thorfinn
 ./setup.sh
 
-# add your LLM key and base directory for the project
-vim config/config.copilot.yml
+# configure your provider and base directory for the project
+vim config/config.yml
 
 # plug in a device and go (--config is required)
 adb devices
 # verify you have device running with target apk installed
-java -jar target/Thorfinn.jar com.target.app --config config/config.copilot.yml
+java -jar target/Thorfinn.jar com.target.app --config config/config.yml
 
 # big app? running out of heap space limit time for propogation
-java -jar target/Thorfinn.jar com.target.app --config config/config.copilot.yml --time-limit 300
+java -jar target/Thorfinn.jar com.target.app --config config/config.yml --time-limit 300
 ```
 
 `setup.sh` handles Java 17, Maven, JADX, Semgrep, TruffleHog, APKTool, ADB, Python, and provisioning Android platform 35 into `resources/android-platforms` when `sdkmanager` is available. Works on macOS (Homebrew) and Linux (apt).
 
 ### Configuration
 
-After setup, edit the config at `config/config.copilot.yml` (recommended) or `config/config.yml`:
+After setup, edit `config/config.yml`:
 
 ```yaml
 toolsConfig:
@@ -158,10 +158,31 @@ toolsConfig:
 
 If you prefer the GitHub CLI wrapper instead of the standalone binary, set `llmCliCommand: gh`. Thorfinn will invoke it as `gh copilot -- ...`.
 
-Example real scan with the dedicated Copilot config:
+Copilot CLI setup checklist:
 
 ```bash
-java -jar target/Thorfinn.jar com.target.app --config config/config.copilot.yml --skip-verify
+# 1) command is available on PATH
+command -v copilot
+# or
+command -v gh
+
+# 2) authenticated session exists
+copilot auth status
+# or
+gh auth status
+
+# 3) verify command is callable
+copilot --help
+# or
+gh copilot --help
+```
+
+If you use `llmCliCommand: gh`, make sure `gh copilot` works on your machine before running Thorfinn.
+
+Example real scan:
+
+```bash
+java -jar target/Thorfinn.jar com.target.app --config config/config.yml --skip-verify
 ```
 
 
@@ -170,7 +191,7 @@ java -jar target/Thorfinn.jar com.target.app --config config/config.copilot.yml 
 ## Usage
 
 ```
-java -jar target/Thorfinn.jar <package-name> --config config/config.copilot.yml or <custom path> [options]
+java -jar target/Thorfinn.jar <package-name> --config config/config.yml or <custom path> [options]
 
 Arguments:
   <package-name>              Android package name of the target app (must be installed on connected device)
@@ -221,13 +242,13 @@ Examples:
 
 ```bash
 # Interactive review (default) - approve or skip each command
-java -jar target/Thorfinn.jar com.target.app --config config/config.copilot.yml
+java -jar target/Thorfinn.jar com.target.app --config config/config.yml
 
 # Run everything unattended
-java -jar target/Thorfinn.jar com.target.app --config config/config.copilot.yml --auto-approve
+java -jar target/Thorfinn.jar com.target.app --config config/config.yml --auto-approve
 
 # Static findings only, never touch the device with POCs
-java -jar target/Thorfinn.jar com.target.app --config config/config.copilot.yml --skip-verify
+java -jar target/Thorfinn.jar com.target.app --config config/config.yml --skip-verify
 ```
 
 ## API 35 Compatibility Note
