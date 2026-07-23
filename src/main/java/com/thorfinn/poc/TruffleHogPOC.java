@@ -3,6 +3,7 @@ package com.thorfinn.poc;
 import com.thorfinn.config.ConfigContext;
 import com.thorfinn.config.ToolsConfig;
 import com.thorfinn.models.Finding;
+import com.thorfinn.utils.PreviousReportUtils;
 import com.thorfinn.models.TruffleHogResult;
 import com.thorfinn.models.TruffleHogResult.SecretFinding;
 import com.thorfinn.parsers.TruffleHogParser;
@@ -79,6 +80,15 @@ public class TruffleHogPOC implements poc {
             SecretFinding sf = result.getFindings().get(i);
             log.info("[*] Analyzing secret {}/{}: {} (line {})",
                     i + 1, result.getTotalFindings(), sf.getFilePath(), sf.getLineNumber());
+
+            Finding reused = PreviousReportUtils.reuse(
+                    "truffleHog", sf.getFilePath(), "line " + sf.getLineNumber(), sf.getRaw());
+            if (reused != null) {
+                findings.add(reused);
+                log.info("[*]   Secret {}: {} (reused from previous report, LLM skipped)",
+                        i + 1, reused.isTruePositive() ? "TRUE POSITIVE" : "FALSE POSITIVE");
+                continue;
+            }
 
             String fileContent = findAndReadFile(sf.getFilePath());
             String userPrompt = buildUserPrompt(sf, fileContent);

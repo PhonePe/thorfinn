@@ -4,7 +4,7 @@
   <groupId>com.thorfinn</groupId>
   <artifactId>Thorfinn</artifactId>
   <name>Thorfinn</name>
-  <version>1.0.5</version>
+  <version>1.0.6</version>
   <description>Android Security Analysis Framework</description>
   <build>
     <plugins>

@@ -3,6 +3,7 @@ package com.thorfinn.poc;
 import com.thorfinn.config.ConfigContext;
 import com.thorfinn.config.ToolsConfig;
 import com.thorfinn.models.Finding;
+import com.thorfinn.utils.PreviousReportUtils;
 import com.thorfinn.models.TaiEAgentModels;
 import com.thorfinn.models.TaiEResult;
 import com.thorfinn.models.TaiEResult.TaintFlowInfo;
@@ -209,6 +210,28 @@ public class TaiEPOC implements poc {
             log.info("[*] Analyzing flow {}/{}: {} -> {}", i + 1, taieResult.getTaintFlows().size(),
                     flow.getSourceFile(), flow.getSinkFile());
 
+            Finding reused = PreviousReportUtils.reuse(
+                    "taie", flow.getSourceFile(), flow.getSinkFile(), flow.getRawFlow());
+            if (reused != null) {
+                boolean tp = reused.isTruePositive();
+                if (tp) truePositives++;
+                else falsePositives++;
+                findings.add(reused);
+                String verdictLabel = tp ? "✅ TRUE POSITIVE" : "❌ FALSE POSITIVE";
+                allResults.append(String.format("| %d | `%s` | `%s` | %s |\n",
+                        i + 1, flow.getSourceFile(), flow.getSinkFile(), verdictLabel));
+                detailedResults.append(String.format("### Flow %d\n\n", i + 1));
+                detailedResults.append(String.format("- **Source:** `%s`\n", flow.getSourceFile()));
+                detailedResults.append(String.format("- **Sink:** `%s`\n", flow.getSinkFile()));
+                detailedResults.append(String.format("- **Verdict:** %s (reused from --report-path)\n", verdictLabel));
+                detailedResults.append(String.format("- **Raw Flow:**\n```\n%s\n```\n\n", flow.getRawFlow()));
+                detailedResults.append("#### LLM Analysis (reused from previous report)\n\n");
+                detailedResults.append(reused.getAnalysis() == null ? "" : reused.getAnalysis()).append("\n\n---\n\n");
+                log.info("[*]   Flow {}: {} (reused from previous report, LLM skipped)",
+                        i + 1, tp ? "TRUE POSITIVE" : "FALSE POSITIVE");
+                continue;
+            }
+
             String sourceCode = isJadx
                     ? findAndReadJava(flow.getSourceFile())
                     : findAndReadSmali(flow.getSourceFile());
@@ -319,6 +342,7 @@ public class TaiEPOC implements poc {
                 findings.add(Finding.builder()
                         .tool("taie")
                         .truePositive(false)
+                        .analysisError(true)
                         .sourceFile(flow.getSourceFile())
                         .sinkFile(flow.getSinkFile())
                         .rawFlow(flow.getRawFlow())

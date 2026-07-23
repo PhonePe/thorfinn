@@ -8,6 +8,9 @@ import lombok.Data;
 public class Finding {
     private String tool;
     private boolean truePositive;
+    private boolean analysisError;
+    private boolean carriedOver;
+    private String version;
     private String sourceFile;
     private String sinkFile;
     private String rawFlow;

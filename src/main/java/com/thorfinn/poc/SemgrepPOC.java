@@ -3,6 +3,7 @@ package com.thorfinn.poc;
 import com.thorfinn.config.ConfigContext;
 import com.thorfinn.config.ToolsConfig;
 import com.thorfinn.models.Finding;
+import com.thorfinn.utils.PreviousReportUtils;
 import com.thorfinn.models.SemgrepResult;
 import com.thorfinn.models.SemgrepResult.SemgrepFinding;
 import com.thorfinn.parsers.SemgrepParser;
@@ -324,6 +325,15 @@ public class SemgrepPOC implements poc {
         log.info("[*]   Receiver class: {}", receiverClassName != null ? receiverClassName : "unknown");
         log.info("[*]   Action: {}", action);
 
+        String dynSink = receiverClassName != null ? receiverClassName : sf.getFilePath();
+        Finding reusedDyn = PreviousReportUtils.reuse("semgrep", sf.getFilePath(), dynSink, null);
+        if (reusedDyn != null) {
+            log.info("[*]   Dynamic receiver {}: {} (reused from previous report, LLM skipped)",
+                    toRelativePath(sf.getFilePath()),
+                    reusedDyn.isTruePositive() ? "TRUE POSITIVE" : "FALSE POSITIVE");
+            return reusedDyn;
+        }
+
         StringBuilder userPrompt = new StringBuilder();
         userPrompt.append("=== SEMGREP FINDING ===\n");
         userPrompt.append("Rule: ").append(sf.getRuleId()).append("\n");
@@ -393,6 +403,14 @@ public class SemgrepPOC implements poc {
 
     private Finding processSqlInjectionFinding(SemgrepFinding sf, LLMClient llmClient,
                                                 String manifest, String vulnClass) {
+        Finding reused = PreviousReportUtils.reuse("semgrep", sf.getFilePath(), sf.getFilePath(), null);
+        if (reused != null) {
+            log.info("[*]   SQL injection {}: {} (reused from previous report, LLM skipped)",
+                    toRelativePath(sf.getFilePath()),
+                    reused.isTruePositive() ? "TRUE POSITIVE" : "FALSE POSITIVE");
+            return reused;
+        }
+
         String vulnerableCode = readFileByPath(sf.getFilePath());
         if (vulnerableCode.startsWith("File not found")) {
             log.warn("[!] Could not read vulnerable class file: {}", sf.getFilePath());

@@ -138,17 +138,26 @@ Arguments:
   <package-name>              Android package name of the target app (must be installed on connected device)
 
 Options:
-  -c, --config <path>         Path to config.yml (required)
-  -t, --time-limit <seconds>  Time limit for CPG/taint analysis
-  -y, --auto-approve          Auto-approve every LLM-generated POC command without prompting
-  -s, --skip-verify           Skip execution of all LLM-generated POC commands
-  -h, --help                  Show this help message
+  -c, --config <path>               Path to config.yml (required)
+  -t, --time-limit <seconds>        Time limit for CPG/taint analysis
+  -r, --report-path <path>          If given the LLM calls for the findings in previous report will be skipped and same findings will be executed based on POC
+  -d, --diff-report-path <path>     If given the findings which are already in report are completely skipped from final report and only new findings are included
+  -y, --auto-approve                Auto-approve every LLM-generated POC command without prompting
+  -s, --skip-verify                 Skip execution of all LLM-generated POC commands
+  -h, --help                        Show this help message
 ```
 
 Thorfinn requires a configuration file for LLM settings, taint rules, tool paths, and verification options. Pass it using the --config flag; relative paths are resolved from the current working directory.
 
 > [!TIP]
 > If the target app is large, and you run out of heap space during taint analysis, use the `--time-limit` option to limit the time spent on propgation.This will reduce the number of findings as application propagation is cut short, but issues will be discovered on the paths that have been fully analyzed.
+
+> [!TIP]
+> Each run generates two report JSON/HTML, JSON report contains signature for each finding. If you want to skip LLM triage for findings that have already been verified, you can pass the previous report path using `--report-path` flag. Thorfinn will skip LLM triage for findings that have the same signature in the previous report and will execute the POC commands for those findings.
+
+> [!TIP]
+> If you want to do a Diff scan based on a previous report, you can pass the previous report path using `--diff-report-path` flag. Thorfinn will skip findings that have the same signature in the previous report and will only include new findings in the final report.
+
 
 
 ## POC Verification (LLM-generated commands)

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.thorfinn.models.Finding;
 import com.thorfinn.models.ManifestInfo;
 import com.thorfinn.models.VerificationResult;
+import com.thorfinn.utils.FindingSignature;
 import com.thorfinn.utils.PathUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,10 +28,14 @@ public class JsonReportGenerator {
     public void generateReport(List<VerificationResult> results, ManifestInfo manifestInfo) {
         List<Map<String, Object>> vulnerabilities = new ArrayList<>();
         for (VerificationResult r : results) {
-            if (!r.isTruePositive()) continue;
             Finding f = r.getFinding();
 
             Map<String, Object> vuln = new LinkedHashMap<>();
+            vuln.put("signature", computeSignature(f));
+            vuln.put("status", statusLabel(r, f));
+            vuln.put("version", f.getVersion());
+            vuln.put("vulnerabilityClass", f.getVulnerabilityClass());
+            vuln.put("tool", f.getTool());
             vuln.put("source", toRelativePath(f.getSourceFile()));
             vuln.put("sink", getDisplaySink(f));
             vuln.put("taintFlow", f.getRawFlow());
@@ -41,15 +46,28 @@ public class JsonReportGenerator {
             vulnerabilities.add(vuln);
         }
 
+        Map<String, Object> report = new LinkedHashMap<>();
+        report.put("applicationInfo", manifestInfo);
+        report.put("findings", vulnerabilities);
+
         String reportPath = Paths.get(REPORT_DIR, "thorfinn_report.json").toString();
         try {
             Path path = Path.of(reportPath);
             Files.createDirectories(path.getParent());
-            Files.writeString(path, mapper.writeValueAsString(vulnerabilities));
+            Files.writeString(path, mapper.writeValueAsString(report));
             log.info("[*] JSON report generated: {}", path.toAbsolutePath());
         } catch (IOException e) {
             log.error("[!] Failed to write JSON report: {}", e.getMessage());
         }
+    }
+
+    private String statusLabel(VerificationResult r, Finding f) {
+        if (f != null && f.isAnalysisError()) return "LLM ERROR";
+        return r.isTruePositive() ? "TRUE POSITIVE" : "FALSE POSITIVE";
+    }
+
+    private String computeSignature(Finding f) {
+        return FindingSignature.compute(f.getTool(), f.getSourceFile(), f.getSinkFile(), f.getRawFlow());
     }
 
     private String getDisplaySink(Finding f) {

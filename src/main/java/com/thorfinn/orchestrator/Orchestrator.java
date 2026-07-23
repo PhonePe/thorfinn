@@ -17,6 +17,7 @@ import com.thorfinn.poc.TruffleHogPOC;
 import com.thorfinn.poc.poc;
 import com.thorfinn.report.HtmlReportGenerator;
 import com.thorfinn.report.JsonReportGenerator;
+import com.thorfinn.utils.PreviousReportUtils;
 import com.thorfinn.tools.TaiE;
 import com.thorfinn.tools.PermissionChecker;
 import com.thorfinn.tools.Semgrep;
@@ -52,13 +53,14 @@ public class  Orchestrator {
     private String packageName;
     private PocApprovalMode pocMode;
 
-    public void execute(String packageName, int timeLimit, String configPath, PocApprovalMode pocMode) throws Exception {
+    public void execute(String packageName, int timeLimit, String configPath, PocApprovalMode pocMode, String reportPath, boolean diffMode) throws Exception {
         CommandRunner.validatePackageName(packageName);
         this.packageName = packageName;
         this.pocMode = pocMode;
         Config config = ConfigLoader.loadConfig(configPath);
         config.getToolsConfig().setCpgTimeLimit(timeLimit);
         ConfigContext.setConfig(config);
+        PreviousReportUtils.initialize(reportPath, diffMode);
         printBanner();
         log.info("[*] Starting Thorfinn Pipeline for package: {} (CPG time-limit: {}s)", packageName, timeLimit);
         CommandRunner.deleteContentsOfFolder(Paths.get(PathUtils.getOutputPath()));
@@ -73,6 +75,7 @@ public class  Orchestrator {
         executeTools(config);
         log.info("[*] Step 4: POC creation and false positive filtering");
         List<Finding> allFindings = generatePOCs(config);
+        stampCurrentVersion(allFindings, manifestInfo);
         log.info("[*] Step 5: Verifying POCs on device...");
         List<VerificationResult> results = verifyFindings(allFindings);
         log.info("[*] Step 6: Generating HTML report...");
@@ -213,11 +216,42 @@ public class  Orchestrator {
         return allFindings;
     }
 
+    private void stampCurrentVersion(List<Finding> findings, ManifestInfo manifestInfo) {
+        String currentVersion = manifestInfo != null ? manifestInfo.getVersionName() : null;
+        for (Finding f : findings) {
+            if (f.getVersion() == null || f.getVersion().isBlank()) {
+                f.setVersion(currentVersion);
+            }
+        }
+    }
+
     private List<VerificationResult> verifyFindings(List<Finding> findings) throws Exception {
         AdbVerifier adbVerifier = new AdbVerifier(packageName, pocMode);
         List<VerificationResult> results = new ArrayList<>();
 
         for (Finding finding : findings) {
+
+            if (finding.isCarriedOver()) {
+                VerificationResult carried = PreviousReportUtils.reuseResult(finding);
+                if (carried != null) {
+                    log.info("[*] Finding [{} -> {}]: CARRIED_OVER from previous report (diff scan, skipped)",
+                            finding.getSourceFile(), finding.getSinkFile());
+                    results.add(carried);
+                    continue;
+                }
+            }
+
+            if (finding.isAnalysisError()) {
+                log.info("[*] Finding [{} -> {}]: LLM_ERROR - could not verify, skipping",
+                        finding.getSourceFile(), finding.getSinkFile());
+                results.add(VerificationResult.builder()
+                        .finding(finding)
+                        .truePositive(false)
+                        .status("LLM_ERROR")
+                        .errorMessage(finding.getAnalysis())
+                        .build());
+                continue;
+            }
 
             if (!finding.isTruePositive()) {
                 log.info("[*] Finding [{} -> {}]: FALSE_POSITIVE - skipping verification",

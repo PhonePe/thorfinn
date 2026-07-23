@@ -20,13 +20,17 @@ public class HtmlReportGenerator {
     private static final String REPORT_DIR = PathUtils.getBaseDirectory();
 
     public void generateReport(List<VerificationResult> results, ManifestInfo manifestInfo) {
+        List<VerificationResult> visibleResults = results.stream()
+                .filter(r -> r.getFinding() == null || !r.getFinding().isCarriedOver())
+                .toList();
+
         StringBuilder html = new StringBuilder();
         html.append(buildHead());
         html.append("<body>\n");
-        html.append(buildHeader(results));
+        html.append(buildHeader(visibleResults));
         html.append(buildAppInfoSection(manifestInfo));
-        html.append(buildSummaryCards(results));
-        html.append(buildFindingsSection(results));
+        html.append(buildSummaryCards(visibleResults));
+        html.append(buildFindingsSection(visibleResults));
         html.append(buildFooter());
         html.append("</body>\n</html>");
 
@@ -189,12 +193,27 @@ public class HtmlReportGenerator {
                         font-size: 0.85rem;
                     }
                     table th:first-child, table td:first-child {
-                        width: 2rem;
+                        width: 2.5rem;
                         text-align: center;
+                        white-space: nowrap;
+                        word-break: keep-all;
+                        overflow-wrap: normal;
                     }
                     .finding-detail table th:first-child, .finding-detail table td:first-child {
                         width: auto;
                         text-align: left;
+                        white-space: normal;
+                    }
+     
+                    .findings-table th, .findings-table td {
+                        white-space: nowrap;
+                        word-break: normal;
+                        overflow-wrap: normal;
+                    }
+                    .findings-table th.wrap-cell, .findings-table td.wrap-cell {
+                        white-space: normal;
+                        word-break: break-word;
+                        overflow-wrap: anywhere;
                     }
                     th {
                         background: var(--bg-secondary);
@@ -461,7 +480,7 @@ public class HtmlReportGenerator {
                         var label = item.querySelector('label');
                         var value = item.querySelector('span');
                         if (!label || !value) return;
-                        if (label.textContent.trim().toUpperCase() !== 'VERDICT') return;
+                        if (label.textContent.trim().toUpperCase() !== 'STATUS') return;
                         if (value.querySelector('.badge')) return;
 
                         var verdictText = value.textContent ? value.textContent.trim().toUpperCase() : '';
@@ -469,6 +488,8 @@ public class HtmlReportGenerator {
                             value.innerHTML = '<span class="badge badge-verified">TRUE POSITIVE</span>';
                         } else if (verdictText === 'FALSE POSITIVE') {
                             value.innerHTML = '<span class="badge badge-fp">FALSE POSITIVE</span>';
+                        } else if (verdictText === 'LLM ERROR') {
+                            value.innerHTML = '<span class="badge badge-error">LLM ERROR</span>';
                         }
                     });
 
@@ -477,7 +498,7 @@ public class HtmlReportGenerator {
                         var verdictLabel = null;
                         var labels = card.querySelectorAll('.detail-item label');
                         labels.forEach(function(lbl) {
-                            if (lbl.textContent && lbl.textContent.trim().toUpperCase() === 'VERDICT') {
+                            if (lbl.textContent && lbl.textContent.trim().toUpperCase() === 'STATUS') {
                                 verdictLabel = lbl;
                             }
                         });
@@ -591,9 +612,9 @@ public class HtmlReportGenerator {
 
     private String buildSummaryCards(List<VerificationResult> results) {
         long truePositives = results.stream().filter(VerificationResult::isTruePositive).count();
-        long falsePositives = results.stream().filter(r -> !r.isTruePositive()).count();
+        long falsePositives = results.stream().filter(r -> !r.isTruePositive() && !isAnalysisError(r)).count();
         long executed = results.stream().filter(r -> "EXECUTED".equals(r.getStatus())).count();
-        long errors = results.stream().filter(r -> "ERROR".equals(r.getStatus())).count();
+        long errors = results.stream().filter(r -> "ERROR".equals(r.getStatus()) || isAnalysisError(r)).count();
         long totalFindings = results.size();
 
         return """
@@ -624,33 +645,40 @@ public class HtmlReportGenerator {
 
     private String buildFindingsSection(List<VerificationResult> results) {
         if (results.isEmpty()) return "";
-
         StringBuilder sb = new StringBuilder();
         sb.append("<h2 class=\"section-title\">🔍 Security Findings</h2>\n");
 
-        sb.append("<table>\n<thead><tr>");
-        sb.append("<th>#</th><th>Verdict</th><th>Vulnerability</th><th>Source</th><th>Sink</th><th>Status</th><th>Evidence</th>");
+        sb.append("<table class=\"findings-table\">\n<thead><tr>");
+        sb.append("<th>#</th><th>Vulnerability</th><th class=\"wrap-cell\">Source</th><th class=\"wrap-cell\">Sink</th><th>Status</th>");
         sb.append("</tr></thead>\n<tbody>\n");
 
         for (int i = 0; i < results.size(); i++) {
             VerificationResult r = results.get(i);
             Finding f = r.getFinding();
-            String badgeClass = statusBadgeClass(r.getStatus());
-            String verdictBadge = verdictBadge(r.isTruePositive());
-            String rowClass = r.isTruePositive() ? " class=\"row-true-positive\"" : "";
-            int evidenceCount = r.getEvidence() != null ? r.getEvidence().size() : 0;
+            boolean err = f.isAnalysisError();
+            boolean tp = r.isTruePositive();
+            String statusBadge;
+            String rowClass;
+            if (err) {
+                statusBadge = "<span class=\"badge badge-error\">LLM ERROR</span>";
+                rowClass = "";
+            } else if (tp) {
+                statusBadge = "<span class=\"badge badge-verified\">TRUE POSITIVE</span>";
+                rowClass = " class=\"row-true-positive\"";
+            } else {
+                statusBadge = "<span class=\"badge badge-fp\">FALSE POSITIVE</span>";
+                rowClass = " class=\"row-false-positive\"";
+            }
 
             String source = getDisplaySource(f);
             String sink = getDisplaySink(f);
 
             sb.append("<tr").append(rowClass).append(">");
             sb.append("<td>").append(i + 1).append("</td>");
-            sb.append("<td>").append(verdictBadge).append("</td>");
             sb.append("<td><span class=\"vuln-tag\">").append(escapeHtml(nullSafe(f.getVulnerabilityClass()))).append("</span></td>");
-            sb.append("<td>").append(escapeHtml(source)).append("</td>");
-            sb.append("<td>").append(escapeHtml(sink)).append("</td>");
-            sb.append("<td><span class=\"badge ").append(badgeClass).append("\">").append(escapeHtml(r.getStatus())).append("</span></td>");
-            sb.append("<td>").append(evidenceCount).append("</td>");
+            sb.append("<td class=\"wrap-cell\">").append(escapeHtml(source)).append("</td>");
+            sb.append("<td class=\"wrap-cell\">").append(escapeHtml(sink)).append("</td>");
+            sb.append("<td>").append(statusBadge).append("</td>");
             sb.append("</tr>\n");
         }
         sb.append("</tbody>\n</table>\n");
@@ -665,7 +693,7 @@ public class HtmlReportGenerator {
 
             sb.append("<div class=\"finding-detail\">\n");
 
-            String verdictLabel = r.isTruePositive() ? "✅" : "❌";
+            String verdictLabel = f.isAnalysisError() ? "⚠️" : (r.isTruePositive() ? "✅" : "❌");
             sb.append("<h3><span class=\"finding-num\">").append(i + 1).append("</span> ");
             sb.append(verdictLabel).append(" ");
             sb.append("<span class=\"vuln-tag\">").append(escapeHtml(nullSafe(f.getVulnerabilityClass()))).append("</span> ");
@@ -675,13 +703,14 @@ public class HtmlReportGenerator {
             }
             sb.append("</h3>\n");
 
+            String statusText = f.isAnalysisError() ? "LLM Error" : (r.isTruePositive() ? "True Positive" : "False Positive");
             sb.append("<div class=\"detail-grid\">\n");
-            sb.append(detailItem("Verdict", r.isTruePositive() ? "True Positive" : "False Positive"));
+            sb.append(detailItem("Status", statusText));
+            sb.append(detailItem("App Version", nullSafe(f.getVersion())));
             sb.append(detailItem("Tool", getToolDisplayName(f.getTool())));
             sb.append(detailItem("Source", source));
             sb.append(detailItem("Sink", sink));
             sb.append(detailItem("Vulnerability Class", nullSafe(f.getVulnerabilityClass())));
-            sb.append(detailItem("Status", r.getStatus()));
             sb.append("</div>\n");
 
             if (f.getRawFlow() != null && !f.getRawFlow().isBlank()) {
@@ -744,21 +773,6 @@ public class HtmlReportGenerator {
         }
     }
 
-    private String statusBadgeClass(String status) {
-        return switch (status) {
-            case "EXECUTED" -> "badge-verified";
-            case "ERROR" -> "badge-error";
-            case "FALSE_POSITIVE" -> "badge-fp";
-            case "EXECUTED_NO_EVIDENCE" -> "badge-skipped";
-            default -> "badge-skipped";
-        };
-    }
-
-    private String verdictBadge(boolean truePositive) {
-        return truePositive
-                ? "<span class=\"badge badge-verified\">TRUE POSITIVE</span>"
-                : "<span class=\"badge badge-fp\">FALSE POSITIVE</span>";
-    }
 
     private String collapsibleSection(String id, String title, String content) {
         return collapsibleSection(id, title, content, false);
@@ -794,6 +808,10 @@ public class HtmlReportGenerator {
                 </div>
                 </div>
                 """;
+    }
+
+    private boolean isAnalysisError(VerificationResult r) {
+        return r.getFinding() != null && r.getFinding().isAnalysisError();
     }
 
     private String escapeHtml(String text) {

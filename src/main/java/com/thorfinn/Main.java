@@ -20,6 +20,8 @@ public class Main {
         String packageName = args[0];
         int timeLimit = DEFAULT_TIME_LIMIT;
         String configPath = null;
+        String reportPath = null;
+        boolean diffMode = false;
         PocApprovalMode pocMode = PocApprovalMode.INTERACTIVE;
 
         for (int i = 1; i < args.length; i++) {
@@ -31,6 +33,11 @@ public class Main {
                 }
             } else if (("--config".equals(args[i]) || "-c".equals(args[i])) && i + 1 < args.length) {
                 configPath = args[++i];
+            } else if (("--report-path".equals(args[i]) || "-r".equals(args[i])) && i + 1 < args.length) {
+                reportPath = args[++i];
+            } else if (("--diff-report-path".equals(args[i]) || "-d".equals(args[i])) && i + 1 < args.length) {
+                reportPath = args[++i];
+                diffMode = true;
             } else if ("--auto-approve".equals(args[i]) || "-y".equals(args[i])) {
                 pocMode = PocApprovalMode.AUTO_APPROVE;
             } else if ("--skip-verify".equals(args[i]) || "-s".equals(args[i])) {
@@ -45,7 +52,7 @@ public class Main {
         }
 
         Orchestrator orchestrator = new Orchestrator();
-        orchestrator.execute(packageName, timeLimit, configPath, pocMode);
+        orchestrator.execute(packageName, timeLimit, configPath, pocMode, reportPath, diffMode);
     }
 
     private static void printHelp() {
@@ -60,17 +67,21 @@ public class Main {
                   <package-name>              Android package name of the target app (must be installed on connected device)
                 
                 Options:
-                  -c, --config <path>         Path to config.yml (required)
-                  -t, --time-limit <seconds>  Time limit for CPG/taint analysis (default: 300)
-                  -y, --auto-approve          Auto-approve all LLM-generated POC commands without prompting
-                  -s, --skip-verify           Skip execution of all LLM-generated POC commands
-                  -v, --version               Print the Thorfinn version and exit
-                  -h, --help                  Show this help message
+                  -c, --config <path>               Path to config.yml (required)
+                  -t, --time-limit <seconds>        Time limit for CPG/taint analysis (default: 300)
+                  -r, --report-path <path>          If given the LLM calls for the findings in previous report will be skipped and same findings will be executed based on POC
+                  -d, --diff-report-path <path>     If given the findings which are already in report are completely skipped from final report and only new findings are included
+                  -y, --auto-approve                Auto-approve all LLM-generated POC commands without prompting
+                  -s, --skip-verify                 Skip execution of all LLM-generated POC commands
+                  -v, --version                     Print the Thorfinn version and exit
+                  -h, --help                        Show this help message
                 
                 Examples:
                   java -jar Thorfinn.jar com.example.app --config /path/to/config.yml
                   java -jar Thorfinn.jar com.example.app -c ./config/config.yml --time-limit 600
                   java -jar Thorfinn.jar com.example.app -c ./config/config.yml --auto-approve
+                  java -jar Thorfinn.jar com.example.app -c ./config/config.yml --report-path ./thorfinn_report.json
+                  java -jar Thorfinn.jar com.example.app -c ./config/config.yml --diff-report-path ./thorfinn_report.json
                   java -jar Thorfinn.jar com.example.app -c ./config/config.yml --skip-verify
                 """.formatted(VersionInfo.getVersion()));
     }

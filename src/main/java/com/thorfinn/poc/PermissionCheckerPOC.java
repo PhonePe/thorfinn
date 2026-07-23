@@ -3,6 +3,7 @@ package com.thorfinn.poc;
 import com.thorfinn.config.ConfigContext;
 import com.thorfinn.config.ToolsConfig;
 import com.thorfinn.models.Finding;
+import com.thorfinn.utils.PreviousReportUtils;
 import com.thorfinn.models.PermissionCheckerResult;
 import com.thorfinn.models.PermissionCheckerResult.PermissionFinding;
 import com.thorfinn.parsers.PermissionCheckerParser;
@@ -111,6 +112,29 @@ public class PermissionCheckerPOC implements poc {
             PermissionFinding pf = result.getFindings().get(i);
             log.info("[*] Analyzing finding {}/{}: [{}] {}", i + 1, result.getFindings().size(),
                     pf.getCheck(), pf.getTitle());
+
+            Finding reused = PreviousReportUtils.reuse(
+                    "permissionChecker", pf.getAffectedComponent(), pf.getPermission(), pf.getDescription());
+            if (reused != null) {
+                boolean tp = reused.isTruePositive();
+                if (tp) truePositives++;
+                else falsePositives++;
+                findings.add(reused);
+                String verdictLabel = tp ? "✅ TRUE POSITIVE" : "❌ FALSE POSITIVE";
+                report.append(String.format("| %d | `%s` | `%s` | `%s` | %s |\n",
+                        i + 1, pf.getCheck(), pf.getPermission(), pf.getAffectedComponent(), verdictLabel));
+                detailed.append(String.format("### Finding %d\n\n", i + 1));
+                detailed.append(String.format("- **Check:** %s\n", pf.getCheck()));
+                detailed.append(String.format("- **Title:** %s\n", pf.getTitle()));
+                detailed.append(String.format("- **Permission:** `%s`\n", pf.getPermission()));
+                detailed.append(String.format("- **Component:** `%s`\n", pf.getAffectedComponent()));
+                detailed.append(String.format("- **Verdict:** %s (reused from --report-path)\n\n", verdictLabel));
+                detailed.append("#### LLM Analysis (reused from previous report)\n\n");
+                detailed.append(reused.getAnalysis() == null ? "" : reused.getAnalysis()).append("\n\n---\n\n");
+                log.info("[*]   Finding {}: {} (reused from previous report, LLM skipped)",
+                        i + 1, tp ? "TRUE POSITIVE" : "FALSE POSITIVE");
+                continue;
+            }
 
             String userPrompt = buildUserPrompt(pf, manifest);
 
