@@ -150,13 +150,10 @@ Options:
 Thorfinn requires a configuration file for LLM settings, taint rules, tool paths, and verification options. Pass it using the --config flag; relative paths are resolved from the current working directory.
 
 > [!TIP]
-> If the target app is large, and you run out of heap space during taint analysis, use the `--time-limit` option to limit the time spent on propgation.This will reduce the number of findings as application propagation is cut short, but issues will be discovered on the paths that have been fully analyzed.
-
-> [!TIP]
-> Each run generates two report JSON/HTML, JSON report contains signature for each finding. If you want to skip LLM triage for findings that have already been verified, you can pass the previous report path using `--report-path` flag. Thorfinn will skip LLM triage for findings that have the same signature in the previous report and will execute the POC commands for those findings.
-
-> [!TIP]
-> If you want to do a Diff scan based on a previous report, you can pass the previous report path using `--diff-report-path` flag. Thorfinn will skip findings that have the same signature in the previous report and will only include new findings in the final report.
+>
+> - **Large apps / out of heap:** use the `--time-limit` option to cap the time spent on propagation. This reduces the number of findings as application propagation is cut short, but issues will still be discovered on the paths that have been fully analyzed.
+> - **Skip re-triage (`--report-path`):** each run generates a JSON and an HTML report, and the JSON report contains a signature for each finding. Pass a previous report with `--report-path` to skip LLM triage for findings whose signature matches the previous report; their POC commands are still executed.
+> - **Diff scan (`--diff-report-path`):** pass a previous report to skip findings whose signature already exists in it, so only new findings are included in the final report. However the JSON report contains all the findings since it may be required to run again for diff scans later or creating automation around it to store and update vulnerabilities. For tracking, each issue has its own version in which the vulnerability was identified.
 
 
 
