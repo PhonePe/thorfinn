@@ -158,9 +158,7 @@ public class TaiEPOC implements poc {
         log.info("[*] Decompiler used: {} - sending {} files to LLM", decompiler, isJadx ? ".java" : ".smali");
 
         LLMClient llmClient = new LLMClient(
-                toolsConfig.getLlmApiKey(),
-                toolsConfig.getLlmModel(),
-                toolsConfig.getLlmBaseUrl()
+            toolsConfig
         );
 
         boolean useAgentMode = toolsConfig.isTaiEAgentEnabled();
