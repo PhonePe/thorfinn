@@ -38,19 +38,23 @@ toolsConfig:
     - semgrep
     - permissionChecker
     - truffleHog
-  llmApiKey: Bearer YOUR_API_KEY          # Add token with scheme e.g Bearer
-  llmModel: gpt-4
-  llmBaseUrl: https://api.openai.com
-  taiEAgentEnabled: false                 # flip to true if you reach input token limit in direct flow or else keep it false
-  taiEAgentMaxToolResponsePercentage: 30 # Max context % for agent tool responses
-  taiEMaxHeapGb: 0                        # Specify heap size here, defaults to 75% of available memory if 0
-  taiEOnlyApp: true                      # true = taint analysis only app code including everything bundled into it sdk etc. ; false = whole-program including reading their bodies as well
-  ignoredPackages:                        # extra packages prefixes to skip during triage/verification, merged with the built-in third-party/SDK list
+  llmProvider: openai                           # supports openai, anthropic and gemini
+  llmApiKey: Bearer YOUR_API_KEY                # Add token with scheme if applicable (e.g. Bearer) otherwise just the token
+  llmModel: gpt-4                               # Model to use for LLM analysis as per the provider
+  llmBaseUrl: https://api.openai.com            # URL for your LLM provider API
+  taiEAgentEnabled: false                       # flip to true if you reach input token limit in direct flow or else keep it false
+  agentLlmApiKey: Bearer YOUR_AGENT_API_KEY     # Used only by TaiE agent mode
+  agentLlmModel: gpt-4                          # Used only by TaiE agent mode
+  agentLlmBaseUrl: https://api.openai.com       # Used only by TaiE agent mode
+  taiEAgentMaxToolResponsePercentage: 30        # Max context % for agent tool responses
+  taiEMaxHeapGb: 0                              # Specify heap size here, defaults to 75% of available memory if 0
+  taiEOnlyApp: true                             # true = taint analysis only app code including everything bundled into it sdk etc. ; false = whole-program including reading their bodies as well
+  ignoredPackages:                              # extra packages prefixes to skip during triage/verification, merged with the built-in third-party/SDK list
     - "com.example.thirdparty."
     - "com.yourorg.analytics."
 
 pathConfigs:
-  baseDirectory: BASE_DIRECTORY_FOR_THORFINN # Replace this with your base directory path for thorfinn
+  baseDirectory: BASE_DIRECTORY_FOR_PROJECT     # Replace this with your base directory path for thorfinn
   decompiledApkPath: /resources/decompiled_apks/
   taiePath: /resources/tools/tai-e-all-0.5.4-SNAPSHOT.jar
   androidPlatformsPath: /resources/android-platforms/
@@ -65,18 +69,20 @@ pathConfigs:
 
 **toolsConfig**
 
-| Field | Description                                                                                                                                         |
-|---|-----------------------------------------------------------------------------------------------------------------------------------------------------|
-| `decompilers` | Which decompiler to use. `jadx` produces Java source (recommended). `apktool` produces smali and decoded resources.                                 |
-| `analysisTools` | List of tools to run. Remove a tool from the list to skip it. Order is preserved.                                                                   |
-| `llmApiKey` | API key for the LLM provider. Required for false positive filtering and POC generation. Make sure you pass the key scheme as well e.g Bearer        |
-| `llmModel` | Model identifier. Use any OpenAI-compatible model (e.g., `gpt-4`, `gpt-4o`).                                                                        |
-| `llmBaseUrl` | Base URL of the LLM API endpoint. Works with any OpenAI-compatible API.                                                                             |
-| `taiEAgentEnabled` | When `true`, the LLM can search the decompiled codebase on-demand for deeper analysis. When `false`, all code context is inlined in a single prompt. |
-| `taiEAgentMaxToolResponsePercentage` | In agent mode, limits how much of the context window tool responses can consume.                                                                    |
-| `taiEMaxHeapGb` | taiEMaxHeapGb is the maximum heap size for Tai-e analysis. If zero is will calculate the 75% of available memory and use that as the heap size.     |
-| `taiEOnlyApp` | by default true makes taint analysis only analyze the app code and everything bundled into it (e.g. SDKs). If you want to analyze the whole program including reading their bodies as well, set taiEOnlyApp to false in config.yml but this causes issues on larger APKs.      |
-| `ignoredPackages` | ignoredPackages is a list of packages that you may want to ignore from verification due to being 3rd party or false positives.      |
+| Field | Description                                                                                                                                                                                                                                                               |
+|---|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `decompilers` | Which decompiler to use. `jadx` produces Java source (recommended). `apktool` produces smali and decoded resources.                                                                                                                                                       |
+| `analysisTools` | List of tools to run. Remove a tool from the list to skip it. Order is preserved.                                                                                                                                                                                         |
+| `llmProvider` | specifies the LLM you want to use for triaging the findings reported by various tools. Currently, we support OpenAI, Gemini and Anthropic. However, agent mode only supports OpenAI.                                                                                      |
+| `llmApiKey` | API key for the LLM provider. Required for false positive filtering and POC generation. Make sure you pass the key scheme as well e.g Bearer if applicable for your LLMProvider                                                                                           |
+| `llmModel` | Model for your LLM provider.                                                                                                                                                                                                                                              |
+| `llmBaseUrl` | URL for API of your LLMProvider                                                                                                                                                                                                                                           |
+| `taiEAgentEnabled` | When `true`, the LLM can search the decompiled codebase on-demand for deeper analysis. When `false`, all code context is inlined in a single prompt.                                                                                                                      |
+| `taiEAgentMaxToolResponsePercentage` | In agent mode, limits how much of the context window tool responses can consume.                                                                                                                                                                                          |
+| `taiEMaxHeapGb` | taiEMaxHeapGb is the maximum heap size for Tai-e analysis. If zero is will calculate the 75% of available memory and use that as the heap size.                                                                                                                           |
+| `taiEOnlyApp` | by default true makes taint analysis only analyze the app code and everything bundled into it (e.g. SDKs). If you want to analyze the whole program including reading their bodies as well, set taiEOnlyApp to false in config.yml but this causes issues on larger APKs. |
+| `ignoredPackages` | ignoredPackages is a list of packages that you may want to ignore from verification due to being 3rd party or false positives.                                                                                                                                            |
+
 
 
 **pathConfigs**

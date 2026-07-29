@@ -15,8 +15,9 @@ nav = [
     { "Run a Scan" = "run-a-scan.md" },
     { "Features" = "features.md" },
     { "Custom Rules" = "custom-rules.md" },
-    { "Adding a tools" = "adding-a-tool.md" }
-  
+    { "Adding a Tool" = "adding-a-tool.md" },
+    { "Adding an LLM Client" = "adding-an-llm-client.md" }
+
 ]
 
 extra_css = ["stylesheets/extra.css"]

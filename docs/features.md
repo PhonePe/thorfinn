@@ -68,6 +68,7 @@ Each candidate finding is reviewed with its full vulnerability context, includin
 
 The LLM-assisted triage checks component exposure, validation logic, sanitization, and known Android vulnerability patterns to classify the finding as a likely true positive or false positive. This helps reduce noise so you can focus on findings that are more likely to be exploitable.
 
+We support multiple LLM providers including Gemini, OpenAI, and Anthropic. You can configure your preferred provider in the `config.yaml` file.
 
 <div align="center">
   <img src="assets/LLM.png" width="900" style="border-radius:20px;" alt="Thorfinn logo">
