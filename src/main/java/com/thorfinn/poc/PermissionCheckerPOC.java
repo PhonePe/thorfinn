@@ -2,12 +2,13 @@ package com.thorfinn.poc;
 
 import com.thorfinn.config.ConfigContext;
 import com.thorfinn.config.ToolsConfig;
+import com.thorfinn.llm.LLMClient;
 import com.thorfinn.models.Finding;
 import com.thorfinn.utils.PreviousReportUtils;
 import com.thorfinn.models.PermissionCheckerResult;
 import com.thorfinn.models.PermissionCheckerResult.PermissionFinding;
 import com.thorfinn.parsers.PermissionCheckerParser;
-import com.thorfinn.utils.LLMClient;
+import com.thorfinn.utils.LLMUtils;
 import com.thorfinn.utils.PathUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -82,11 +83,7 @@ public class PermissionCheckerPOC implements poc {
         log.info("[*] Starting PermissionChecker POC generation with LLM analysis...");
 
         ToolsConfig toolsConfig = ConfigContext.getConfig().getToolsConfig();
-        LLMClient llmClient = new LLMClient(
-                toolsConfig.getLlmApiKey(),
-                toolsConfig.getLlmModel(),
-                toolsConfig.getLlmBaseUrl()
-        );
+        LLMClient llmClient = LLMUtils.create(toolsConfig);
 
         PermissionCheckerParser parser = new PermissionCheckerParser();
         PermissionCheckerResult result = parser.parse();

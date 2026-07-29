@@ -2,12 +2,13 @@ package com.thorfinn.poc;
 
 import com.thorfinn.config.ConfigContext;
 import com.thorfinn.config.ToolsConfig;
+import com.thorfinn.llm.LLMClient;
 import com.thorfinn.models.Finding;
 import com.thorfinn.utils.PreviousReportUtils;
 import com.thorfinn.models.TruffleHogResult;
 import com.thorfinn.models.TruffleHogResult.SecretFinding;
 import com.thorfinn.parsers.TruffleHogParser;
-import com.thorfinn.utils.LLMClient;
+import com.thorfinn.utils.LLMUtils;
 import com.thorfinn.utils.PathUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -63,11 +64,7 @@ public class TruffleHogPOC implements poc {
         log.info("[*] Starting TruffleHog POC generation with LLM analysis...");
 
         ToolsConfig toolsConfig = ConfigContext.getConfig().getToolsConfig();
-        LLMClient llmClient = new LLMClient(
-                toolsConfig.getLlmApiKey(),
-                toolsConfig.getLlmModel(),
-                toolsConfig.getLlmBaseUrl()
-        );
+        LLMClient llmClient = LLMUtils.create(toolsConfig);
 
         TruffleHogParser parser = new TruffleHogParser();
         TruffleHogResult result = parser.parse();

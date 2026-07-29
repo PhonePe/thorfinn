@@ -1,17 +1,22 @@
-package com.thorfinn.utils;
+package com.thorfinn.llm;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.thorfinn.utils.TokenUsageTracker;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.*;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 import okhttp3.ResponseBody;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public class LLMClient {
+public class OpenAIClient implements LLMClient {
 
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     private static final String CHAT_COMPLETIONS_ENDPOINT = "/v1/chat/completions";
@@ -21,7 +26,7 @@ public class LLMClient {
     private final String baseUrl;
     private final OkHttpClient client;
 
-    public LLMClient(String apiKey, String model, String baseUrl) {
+    public OpenAIClient(String apiKey, String model, String baseUrl) {
         this.apiKey = apiKey;
         this.model = model;
         this.baseUrl = baseUrl;
@@ -32,6 +37,7 @@ public class LLMClient {
                 .build();
     }
 
+    @Override
     public String chat(String systemPrompt, String userPrompt) throws IOException {
         JsonObject requestBody = new JsonObject();
         requestBody.addProperty("model", model);
@@ -108,3 +114,4 @@ public class LLMClient {
         return normalized + CHAT_COMPLETIONS_ENDPOINT;
     }
 }
+

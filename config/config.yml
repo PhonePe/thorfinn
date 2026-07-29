@@ -5,19 +5,23 @@ toolsConfig:
     - semgrep
     - permissionChecker
     - truffleHog
-  llmApiKey: Bearer YOUR_API_KEY          # Add token with scheme e.g Bearer
-  llmModel: gpt-4
-  llmBaseUrl: https://api.openai.com
-  taiEAgentEnabled: false                 # flip to true if you reach input token limit in direct flow or else keep it false
-  taiEAgentMaxToolResponsePercentage: 30 # Max context % for agent tool responses
-  taiEMaxHeapGb: 0                        # Specify heap size here, defaults to 75% of available memory if 0
-  taiEOnlyApp: true                      # true = taint analysis only app code including everything bundled into it sdk etc. ; false = whole-program including reading their bodies as well
-  ignoredPackages:                        # extra packages prefixes to skip during triage/verification, merged with the built-in third-party/SDK list
+  llmProvider: openai                           # supports openai, anthropic and gemini
+  llmApiKey: Bearer YOUR_API_KEY                # Add token with scheme if applicable (e.g. Bearer) otherwise just the token
+  llmModel: gpt-4                               # Model to use for LLM analysis as per the provider
+  llmBaseUrl: https://api.openai.com            # URL for your LLM provider API
+  taiEAgentEnabled: false                       # flip to true if you reach input token limit in direct flow or else keep it false
+  agentLlmApiKey: Bearer YOUR_AGENT_API_KEY     # Used only by TaiE agent mode
+  agentLlmModel: gpt-4                          # Used only by TaiE agent mode
+  agentLlmBaseUrl: https://api.openai.com       # Used only by TaiE agent mode
+  taiEAgentMaxToolResponsePercentage: 30        # Max context % for agent tool responses
+  taiEMaxHeapGb: 0                              # Specify heap size here, defaults to 75% of available memory if 0
+  taiEOnlyApp: true                             # true = taint analysis only app code including everything bundled into it sdk etc. ; false = whole-program including reading their bodies as well
+  ignoredPackages:                              # extra packages prefixes to skip during triage/verification, merged with the built-in third-party/SDK list
     - "com.example.thirdparty."
     - "com.yourorg.analytics."
 
 pathConfigs:
-  baseDirectory: BASE_DIRECTORY_FOR_PROJECT # Replace this with your base directory path for the project
+  baseDirectory: BASE_DIRECTORY_FOR_PROJECT     # Replace this with your base directory path for thorfinn
   decompiledApkPath: /resources/decompiled_apks/
   taiePath: /resources/tools/tai-e-all-0.5.4-SNAPSHOT.jar
   androidPlatformsPath: /resources/android-platforms/

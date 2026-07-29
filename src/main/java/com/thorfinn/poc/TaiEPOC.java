@@ -2,13 +2,14 @@ package com.thorfinn.poc;
 
 import com.thorfinn.config.ConfigContext;
 import com.thorfinn.config.ToolsConfig;
+import com.thorfinn.llm.LLMClient;
 import com.thorfinn.models.Finding;
 import com.thorfinn.utils.PreviousReportUtils;
 import com.thorfinn.models.TaiEAgentModels;
 import com.thorfinn.models.TaiEResult;
 import com.thorfinn.models.TaiEResult.TaintFlowInfo;
 import com.thorfinn.parsers.TaiEParser;
-import com.thorfinn.utils.LLMClient;
+import com.thorfinn.utils.LLMUtils;
 import com.thorfinn.utils.PathUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -158,11 +159,7 @@ public class TaiEPOC implements poc {
 
         log.info("[*] Decompiler used: {} - sending {} files to LLM", decompiler, isJadx ? ".java" : ".smali");
 
-        LLMClient llmClient = new LLMClient(
-                toolsConfig.getLlmApiKey(),
-                toolsConfig.getLlmModel(),
-                toolsConfig.getLlmBaseUrl()
-        );
+        LLMClient llmClient = LLMUtils.create(toolsConfig);
 
         boolean useAgentMode = toolsConfig.isTaiEAgentEnabled();
         TaiEAgentRunner agentRunner = null;

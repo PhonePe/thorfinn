@@ -2,12 +2,13 @@ package com.thorfinn.poc;
 
 import com.thorfinn.config.ConfigContext;
 import com.thorfinn.config.ToolsConfig;
+import com.thorfinn.llm.LLMClient;
 import com.thorfinn.models.Finding;
 import com.thorfinn.utils.PreviousReportUtils;
 import com.thorfinn.models.SemgrepResult;
 import com.thorfinn.models.SemgrepResult.SemgrepFinding;
 import com.thorfinn.parsers.SemgrepParser;
-import com.thorfinn.utils.LLMClient;
+import com.thorfinn.utils.LLMUtils;
 import com.thorfinn.utils.PathUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -196,11 +197,7 @@ public class SemgrepPOC implements poc {
         log.info("[*] Processing Semgrep findings with LLM verification...");
 
         ToolsConfig toolsConfig = ConfigContext.getConfig().getToolsConfig();
-        LLMClient llmClient = new LLMClient(
-                toolsConfig.getLlmApiKey(),
-                toolsConfig.getLlmModel(),
-                toolsConfig.getLlmBaseUrl()
-        );
+        LLMClient llmClient = LLMUtils.create(toolsConfig);
 
         SemgrepParser parser = new SemgrepParser();
         SemgrepResult semgrepResult = parser.parse();

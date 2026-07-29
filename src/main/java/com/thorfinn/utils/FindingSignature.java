@@ -25,7 +25,6 @@ public final class FindingSignature {
             }
             return "sha256:" + hex;
         } catch (NoSuchAlgorithmException e) {
-            // SHA-256 is guaranteed present on every JVM; this should never happen.
             return "sha256:" + Integer.toHexString(canonical.hashCode());
         }
     }

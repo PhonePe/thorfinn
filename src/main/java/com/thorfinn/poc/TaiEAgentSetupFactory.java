@@ -24,9 +24,9 @@ public final class TaiEAgentSetupFactory {
             throw new IllegalArgumentException("toolsConfig must not be null");
         }
 
-        String modelName = requireNonBlank(toolsConfig.getLlmModel(), "llmModel");
-        String baseUrl = requireNonBlank(toolsConfig.getLlmBaseUrl(), "llmBaseUrl");
-        String apiKey = requireNonBlank(toolsConfig.getLlmApiKey(), "llmApiKey");
+        String modelName = requireNonBlank(toolsConfig.getAgentLlmModel(), "agentLlmModel");
+        String baseUrl = requireNonBlank(toolsConfig.getAgentLlmBaseUrl(), "agentLlmBaseUrl");
+        String apiKey = requireNonBlank(toolsConfig.getAgentLlmApiKey(), "agentLlmApiKey");
 
         var mapper = JsonUtils.createMapper();
 

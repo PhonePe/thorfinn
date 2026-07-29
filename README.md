@@ -37,7 +37,7 @@ Thorfinn is an automated Dynamic Application Security Testing framework for Andr
 
 Unlike scanners that report isolated risky patterns or rely on generic dynamic payloads, Thorfinn traces attacker-controlled data across classes and Android-specific flows such as intents, extras, deep links, `startActivity()`, and component transitions. It supports configurable sources and sinks, pattern-based checks for common misconfigurations and hardcoded secrets, and Manifest auditing for meaningful permission and component exposure issues.
 
-For all true positive findings, Thorfinn uses the complete taint path and application context to triage the issue, generate targeted proof-of-concept payloads, execute them on the connected device or emulator, and collect runtime evidence. The final report includes the vulnerable flow, affected components, payloads, and validation evidence needed to verify and reproduce real client-side vulnerabilities.
+For all true positive findings, Thorfinn uses the complete taint path and application context to triage the issue, generate targeted proof-of-concept payloads, execute them on the connected device or emulator, and collect runtime evidence. The final report includes the vulnerable flow, affected components, payloads, and validation evidence needed to verify and reproduce real client-side vulnerabilities. We also support multiple LLM providers for triaging findings and generating POCs, including OpenAI and Gemini.
 
 ## Demo
 
@@ -98,19 +98,23 @@ toolsConfig:
     - semgrep
     - permissionChecker
     - truffleHog
-  llmApiKey: Bearer YOUR_API_KEY          # Add token with scheme e.g Bearer
-  llmModel: gpt-4
-  llmBaseUrl: https://api.openai.com
-  taiEAgentEnabled: false                 # flip to true if you reach input token limit in direct flow or else keep it false
-  taiEAgentMaxToolResponsePercentage: 30 # Max context % for agent tool responses
-  taiEMaxHeapGb: 0                        # Specify heap size here, defaults to 75% of available memory if 0
-  taiEOnlyApp: true                      # true = taint analysis only app code including everything bundled into it sdk etc. ; false = whole-program including reading their bodies as well
-  ignoredPackages:                        # extra packages prefixes to skip during triage/verification, merged with the built-in third-party/SDK list
+  llmProvider: openai                           # supports openai, anthropic and gemini
+  llmApiKey: Bearer YOUR_API_KEY                # Add token with scheme if applicable (e.g. Bearer) otherwise just the token
+  llmModel: gpt-4                               # Model to use for LLM analysis as per the provider
+  llmBaseUrl: https://api.openai.com            # URL for your LLM provider API
+  taiEAgentEnabled: false                       # flip to true if you reach input token limit in direct flow or else keep it false
+  agentLlmApiKey: Bearer YOUR_AGENT_API_KEY     # Used only by TaiE agent mode
+  agentLlmModel: gpt-4                          # Used only by TaiE agent mode
+  agentLlmBaseUrl: https://api.openai.com       # Used only by TaiE agent mode
+  taiEAgentMaxToolResponsePercentage: 30        # Max context % for agent tool responses
+  taiEMaxHeapGb: 0                              # Specify heap size here, defaults to 75% of available memory if 0
+  taiEOnlyApp: true                             # true = taint analysis only app code including everything bundled into it sdk etc. ; false = whole-program including reading their bodies as well
+  ignoredPackages:                              # extra packages prefixes to skip during triage/verification, merged with the built-in third-party/SDK list
     - "com.example.thirdparty."
     - "com.yourorg.analytics."
 
 pathConfigs:
-  baseDirectory: BASE_DIRECTORY_FOR_THORFINN # Replace this with your base directory path for thorfinn
+  baseDirectory: BASE_DIRECTORY_FOR_PROJECT     # Replace this with your base directory path for thorfinn
   decompiledApkPath: /resources/decompiled_apks/
   taiePath: /resources/tools/tai-e-all-0.5.4-SNAPSHOT.jar
   androidPlatformsPath: /resources/android-platforms/
@@ -125,6 +129,7 @@ pathConfigs:
 > * `taiEMaxHeapGb` is the maximum heap size for Tai-e analysis. If zero, it will calculate the 75% of available memory and use that as the heap size.
 > * `ignoredPackages` is a list of packages that you may want to ignore from verification due to being 3rd party or false positives.
 > * `taiEOnlyApp` by default true (strongly recommended for big applications) makes taint analysis only analyze the app code and everything bundled into it (e.g. SDKs). If you want to analyze the whole program including reading their bodies as well, set `taiEOnlyApp` to false in config.yml but this causes issues on larger APKs.
+> * `llmProvider` specifies the LLM you want to use for triaging the findings reported by various tools. Currently, we support OpenAI, Gemini and Anthropic. However, agent mode only supports OpenAI. 
 
 
 
