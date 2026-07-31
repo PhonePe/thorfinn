@@ -38,10 +38,10 @@ toolsConfig:
     - semgrep
     - permissionChecker
     - truffleHog
-  llmProvider: openai                           # supports openai, anthropic and gemini
-  llmApiKey: Bearer YOUR_API_KEY                # Add token with scheme if applicable (e.g. Bearer) otherwise just the token
+  llmProvider: openai                           # supports openai, anthropic, copilot and gemini
+  llmApiKey: Bearer YOUR_API_KEY                # Add token with scheme if applicable (e.g. Bearer) otherwise just the token. n/a for copilot
   llmModel: gpt-4                               # Model to use for LLM analysis as per the provider
-  llmBaseUrl: https://api.openai.com            # URL for your LLM provider API
+  llmBaseUrl: https://api.openai.com            # URL for your LLM provider API, n/a for copilot
   taiEAgentEnabled: false                       # flip to true if you reach input token limit in direct flow or else keep it false
   agentLlmApiKey: Bearer YOUR_AGENT_API_KEY     # Used only by TaiE agent mode
   agentLlmModel: gpt-4                          # Used only by TaiE agent mode
@@ -73,10 +73,10 @@ pathConfigs:
 |---|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `decompilers` | Which decompiler to use. `jadx` produces Java source (recommended). `apktool` produces smali and decoded resources.                                                                                                                                                       |
 | `analysisTools` | List of tools to run. Remove a tool from the list to skip it. Order is preserved.                                                                                                                                                                                         |
-| `llmProvider` | specifies the LLM you want to use for triaging the findings reported by various tools. Currently, we support OpenAI, Gemini and Anthropic. However, agent mode only supports OpenAI.                                                                                      |
-| `llmApiKey` | API key for the LLM provider. Required for false positive filtering and POC generation. Make sure you pass the key scheme as well e.g Bearer if applicable for your LLMProvider                                                                                           |
+| `llmProvider` | specifies the LLM you want to use for triaging the findings reported by various tools. Currently, we support OpenAI, Gemini and Anthropic. However, agent mode only supports OpenAI. Copilot CLI is also supported given that you have configured it on your system       |
+| `llmApiKey` | API key for the LLM provider. Required for false positive filtering and POC generation. Make sure you pass the key scheme as well e.g Bearer if applicable for your LLMProvider. N/A for Copilot CLI.                                                                     |
 | `llmModel` | Model for your LLM provider.                                                                                                                                                                                                                                              |
-| `llmBaseUrl` | URL for API of your LLMProvider                                                                                                                                                                                                                                           |
+| `llmBaseUrl` | URL for API of your LLMProvider. N/A for Copilot CLI.                                                                                                                                                                                                                                         |
 | `taiEAgentEnabled` | When `true`, the LLM can search the decompiled codebase on-demand for deeper analysis. When `false`, all code context is inlined in a single prompt.                                                                                                                      |
 | `taiEAgentMaxToolResponsePercentage` | In agent mode, limits how much of the context window tool responses can consume.                                                                                                                                                                                          |
 | `taiEMaxHeapGb` | taiEMaxHeapGb is the maximum heap size for Tai-e analysis. If zero is will calculate the 75% of available memory and use that as the heap size.                                                                                                                           |
