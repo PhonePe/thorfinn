@@ -1,6 +1,6 @@
 # Adding an LLM Client
 
-Thofinn supports multiple LLM providers including Gemini, OpenAI, and Anthropic. Adding a new client requires just implementing the `LLMClient` interface and registering it in `LLMUtils`. Each client has its own request, authorization token and response format, so adding a new providers requires you to handle these and rest is handled by the framework.
+Thofinn supports multiple LLM providers including Gemini, OpenAI, Copilot CLI and Anthropic. Adding a new client requires just implementing the `LLMClient` interface and registering it in `LLMUtils`. Each client has its own request, authorization token and response format, so adding a new providers requires you to handle these and rest is handled by the framework.
 
 ## 1. Create the client
 
