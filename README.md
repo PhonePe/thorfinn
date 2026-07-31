@@ -98,10 +98,10 @@ toolsConfig:
     - semgrep
     - permissionChecker
     - truffleHog
-  llmProvider: openai                           # supports openai, anthropic and gemini
-  llmApiKey: Bearer YOUR_API_KEY                # Add token with scheme if applicable (e.g. Bearer) otherwise just the token
+  llmProvider: openai                           # supports openai, anthropic, copilot and gemini
+  llmApiKey: Bearer YOUR_API_KEY                # Add token with scheme if applicable (e.g. Bearer) otherwise just the token. n/a for copilot
   llmModel: gpt-4                               # Model to use for LLM analysis as per the provider
-  llmBaseUrl: https://api.openai.com            # URL for your LLM provider API
+  llmBaseUrl: https://api.openai.com            # URL for your LLM provider API, n/a for copilot
   taiEAgentEnabled: false                       # flip to true if you reach input token limit in direct flow or else keep it false
   agentLlmApiKey: Bearer YOUR_AGENT_API_KEY     # Used only by TaiE agent mode
   agentLlmModel: gpt-4                          # Used only by TaiE agent mode
@@ -129,7 +129,7 @@ pathConfigs:
 > * `taiEMaxHeapGb` is the maximum heap size for Tai-e analysis. If zero, it will calculate the 75% of available memory and use that as the heap size.
 > * `ignoredPackages` is a list of packages that you may want to ignore from verification due to being 3rd party or false positives.
 > * `taiEOnlyApp` by default true (strongly recommended for big applications) makes taint analysis only analyze the app code and everything bundled into it (e.g. SDKs). If you want to analyze the whole program including reading their bodies as well, set `taiEOnlyApp` to false in config.yml but this causes issues on larger APKs.
-> * `llmProvider` specifies the LLM you want to use for triaging the findings reported by various tools. Currently, we support OpenAI, Gemini and Anthropic. However, agent mode only supports OpenAI. 
+> * `llmProvider` specifies the LLM you want to use for triaging the findings reported by various tools. Currently, we support OpenAI, Gemini and Anthropic. However, agent mode only supports OpenAI. We also support GitHub Copilot CLI but the CLI should be conifgured in your system and available in PATH.
 
 
 

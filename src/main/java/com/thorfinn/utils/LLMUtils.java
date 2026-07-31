@@ -3,6 +3,7 @@ package com.thorfinn.utils;
 import com.thorfinn.config.ToolsConfig;
 import com.thorfinn.llm.AnthropicClient;
 import com.thorfinn.llm.GeminiClient;
+import com.thorfinn.llm.GitHubCopilotClient;
 import com.thorfinn.llm.LLMClient;
 import com.thorfinn.llm.OpenAIClient;
 
@@ -39,6 +40,7 @@ public final class LLMUtils {
                     toolsConfig.getLlmModel(),
                     toolsConfig.getLlmBaseUrl()
             );
+            case "copilot" -> new GitHubCopilotClient(toolsConfig.getLlmModel());
             default -> throw new IllegalArgumentException("Unsupported LLM provider: " + provider);
         };
     }

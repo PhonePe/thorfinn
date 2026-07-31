@@ -6,6 +6,10 @@ import com.thorfinn.models.ManifestInfo.ExportedComponent;
 import com.thorfinn.models.VerificationResult;
 import com.thorfinn.utils.PathUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.commonmark.Extension;
+import org.commonmark.ext.gfm.tables.TablesExtension;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -18,6 +22,22 @@ import java.util.List;
 @Slf4j
 public class HtmlReportGenerator {
     private static final String REPORT_DIR = PathUtils.getBaseDirectory();
+    private static final List<Extension> MARKDOWN_EXTENSIONS = List.of(TablesExtension.create());
+    private static final Parser MARKDOWN_PARSER = Parser.builder()
+            .extensions(MARKDOWN_EXTENSIONS)
+            .build();
+    private static final HtmlRenderer MARKDOWN_RENDERER = HtmlRenderer.builder()
+            .extensions(MARKDOWN_EXTENSIONS)
+            .escapeHtml(true)
+            .sanitizeUrls(true)
+            .softbreak("<br>\n")
+            .attributeProviderFactory(context -> (node, tagName, attributes) -> {
+                if ("a".equals(tagName)) {
+                    attributes.put("target", "_blank");
+                    attributes.put("rel", "noopener noreferrer");
+                }
+            })
+            .build();
 
     public void generateReport(List<VerificationResult> results, ManifestInfo manifestInfo) {
         List<VerificationResult> visibleResults = results.stream()
@@ -347,6 +367,78 @@ public class HtmlReportGenerator {
                         line-height: 1.5;
                         color: var(--text-primary);
                     }
+                    .markdown-block {
+                        background: var(--bg-secondary);
+                        border: 1px solid var(--border-soft);
+                        padding: 1rem;
+                        margin-top: 0.5rem;
+                        max-height: 400px;
+                        overflow: auto;
+                        color: var(--text-primary);
+                        font-size: 0.85rem;
+                        line-height: 1.65;
+                        word-break: break-word;
+                        overflow-wrap: anywhere;
+                    }
+                    .markdown-block > :first-child { margin-top: 0; }
+                    .markdown-block > :last-child { margin-bottom: 0; }
+                    .markdown-block h1,
+                    .markdown-block h2,
+                    .markdown-block h3,
+                    .markdown-block h4,
+                    .markdown-block h5,
+                    .markdown-block h6 {
+                        font-family: 'Playfair Display', 'Georgia', serif;
+                        line-height: 1.3;
+                        margin: 1rem 0 0.45rem;
+                        color: var(--heading-color);
+                    }
+                    .markdown-block h1 { font-size: 1.35rem; border-bottom: 1px solid var(--border-soft); padding-bottom: 0.25rem; }
+                    .markdown-block h2 { font-size: 1.2rem; border-bottom: 1px solid var(--border-soft); padding-bottom: 0.2rem; }
+                    .markdown-block h3 { font-size: 1.05rem; }
+                    .markdown-block h4,
+                    .markdown-block h5,
+                    .markdown-block h6 { font-size: 0.95rem; }
+                    .markdown-block p { margin: 0.55rem 0; }
+                    .markdown-block ul,
+                    .markdown-block ol { margin: 0.55rem 0; padding-left: 1.6rem; }
+                    .markdown-block li { margin: 0.2rem 0; }
+                    .markdown-block blockquote {
+                        margin: 0.75rem 0;
+                        padding: 0.3rem 0.8rem;
+                        border-left: 3px solid var(--accent-blue);
+                        color: var(--text-secondary);
+                        background: var(--bg-card);
+                    }
+                    .markdown-block code {
+                        font-family: 'IBM Plex Mono', monospace;
+                        font-size: 0.78rem;
+                        background: var(--bg-card);
+                        border: 1px solid var(--border-soft);
+                        padding: 0.08rem 0.25rem;
+                        white-space: pre-wrap;
+                    }
+                    .markdown-block pre {
+                        margin: 0.75rem 0;
+                        padding: 0.8rem;
+                        overflow-x: auto;
+                        background: var(--bg-card);
+                        border: 1px solid var(--border-soft);
+                    }
+                    .markdown-block pre code {
+                        display: block;
+                        padding: 0;
+                        border: none;
+                        background: transparent;
+                        white-space: pre;
+                        word-break: normal;
+                        overflow-wrap: normal;
+                    }
+                    .markdown-block table { margin: 0.75rem 0; font-size: 0.78rem; }
+                    .markdown-block th,
+                    .markdown-block td { padding: 0.45rem 0.6rem; }
+                    .markdown-block a { color: var(--accent-blue); text-decoration: underline; }
+                    .markdown-block hr { border: 0; border-top: 1px solid var(--border-soft); margin: 1rem 0; }
                     .collapsible-header {
                         cursor: pointer;
                         display: flex;
@@ -752,7 +844,7 @@ public class HtmlReportGenerator {
 
     private void appendCommonSections(StringBuilder sb, VerificationResult r, Finding f, String idx) {
         if (f.getAnalysis() != null && !f.getAnalysis().isBlank()) {
-            sb.append(collapsibleSection("analysis-" + idx, "LLM Analysis", f.getAnalysis()));
+            sb.append(markdownCollapsibleSection("analysis-" + idx, "LLM Analysis", f.getAnalysis()));
         }
         if (f.getPoc() != null && !f.getPoc().isBlank()) {
             sb.append(collapsibleSection("poc-" + idx, "Proof of Concept", f.getPoc()));
@@ -789,6 +881,39 @@ public class HtmlReportGenerator {
                     <div class="code-block">%s</div>
                 </div>
                 """.formatted(id, id, arrowStyle, escapeHtml(title), openClass, id, escapeHtml(content));
+    }
+
+    private String markdownCollapsibleSection(String id, String title, String content) {
+        return """
+                <div class="collapsible-header" onclick="toggleCollapsible('%s')">
+                    <span class="arrow" id="arrow-%s">▶</span> %s
+                </div>
+                <div class="collapsible-content" id="%s">
+                    <div class="markdown-block">%s</div>
+                </div>
+                """.formatted(id, id, escapeHtml(title), id, renderMarkdown(content));
+    }
+
+    private String renderMarkdown(String content) {
+        String markdown = unwrapMarkdownFence(content);
+        return MARKDOWN_RENDERER.render(MARKDOWN_PARSER.parse(markdown));
+    }
+
+    private String unwrapMarkdownFence(String content) {
+        String normalized = content.replace("\r\n", "\n").replace('\r', '\n').trim();
+        int firstLineEnd = normalized.indexOf('\n');
+        int lastLineStart = normalized.lastIndexOf('\n');
+        if (firstLineEnd < 0 || lastLineStart <= firstLineEnd) {
+            return content;
+        }
+
+        String openingFence = normalized.substring(0, firstLineEnd).trim();
+        String closingFence = normalized.substring(lastLineStart + 1).trim();
+        if (("```markdown".equalsIgnoreCase(openingFence) || "```md".equalsIgnoreCase(openingFence))
+                && "```".equals(closingFence)) {
+            return normalized.substring(firstLineEnd + 1, lastLineStart).trim();
+        }
+        return content;
     }
 
     private String detailItem(String label, String value) {
