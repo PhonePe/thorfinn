@@ -37,7 +37,7 @@ Thorfinn is an automated Dynamic Application Security Testing framework for Andr
 
 Unlike scanners that report isolated risky patterns or rely on generic dynamic payloads, Thorfinn traces attacker-controlled data across classes and Android-specific flows such as intents, extras, deep links, `startActivity()`, and component transitions. It supports configurable sources and sinks, pattern-based checks for common misconfigurations and hardcoded secrets, and Manifest auditing for meaningful permission and component exposure issues.
 
-For all true positive findings, Thorfinn uses the complete taint path and application context to triage the issue, generate targeted proof-of-concept payloads, execute them on the connected device or emulator, and collect runtime evidence. The final report includes the vulnerable flow, affected components, payloads, and validation evidence needed to verify and reproduce real client-side vulnerabilities. We also support multiple LLM providers for triaging findings and generating POCs, including OpenAI, Anthropic and Gemini.
+For all true positive findings, Thorfinn uses the complete taint path and application context to triage the issue, generate targeted proof-of-concept payloads, execute them on the connected device or emulator, and collect runtime evidence. The final report includes the vulnerable flow, affected components, payloads, and validation evidence needed to verify and reproduce real client-side vulnerabilities. We also support multiple LLM providers for triaging findings and generating POCs, including OpenAI, Anthropic and Gemini. We also support GitHub Copilot CLI but the CLI should be conifgured in your system and available in PATH.
 
 ## Demo
 
