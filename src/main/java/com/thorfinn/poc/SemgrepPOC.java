@@ -238,12 +238,6 @@ public class SemgrepPOC implements poc {
                 continue;
             }
 
-            if (ruleId != null && (ruleId.contains("exported-flag") || ruleId.contains("exported-constant"))) {
-                log.info("[*]   Skipping exported-flag rule - relying on action-specific rules for analysis");
-                log.info("────────────────────────────────────────────────────");
-                continue;
-            }
-
             log.info("────────────────────────────────────────────────────");
 
             if (ruleId != null && ruleId.contains("dynamic-receiver")) {

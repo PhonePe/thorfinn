@@ -20,5 +20,6 @@ public class ToolsConfig {
     private int cpgTimeLimit;
     private int taiEMaxHeapGb;
     private boolean taiEOnlyApp;
-    private List<String> ignoredPackages;
+    private List<String> ignoredTaiePackages;
+    private List<String> ignoredSemgrepPackages;
 }

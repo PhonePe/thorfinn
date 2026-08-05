@@ -84,10 +84,10 @@ public class TaiEParser implements Parsers<TaiEResult> {
 
     @Override
     public TaiEResult parse() throws Exception {
-        List<String> extra = ConfigContext.getConfig().getToolsConfig().getIgnoredPackages();
+        List<String> extra = ConfigContext.getConfig().getToolsConfig().getIgnoredTaiePackages();
         if (extra != null && !extra.isEmpty()) {
             IGNORED_PACKAGES.addAll(extra);
-            log.info("[*] Added {} additional ignored package(s) from config", extra.size());
+            log.info("[*] Added {} additional Tai-e ignored package(s) from config", extra.size());
         }
 
         String taieOutputFile = Paths.get(PathUtils.getOutputPath(), "taie_output.txt").toString();

@@ -109,9 +109,11 @@ toolsConfig:
   taiEAgentMaxToolResponsePercentage: 30        # Max context % for agent tool responses
   taiEMaxHeapGb: 0                              # Specify heap size here, defaults to 75% of available memory if 0
   taiEOnlyApp: true                             # true = taint analysis only app code including everything bundled into it sdk etc. ; false = whole-program including reading their bodies as well
-  ignoredPackages:                              # extra packages prefixes to skip during triage/verification, merged with the built-in third-party/SDK list
+  ignoredTaiePackages:                          # package prefix for tai-e to exclude from triage being either third party or false positives
     - "com.example.thirdparty."
     - "com.yourorg.analytics."
+  ignoredSemgrepPackages:                       # package prefix for semgrep to exclude from triage being either third party or false positives
+    - "com.false.positives."
 
 pathConfigs:
   baseDirectory: BASE_DIRECTORY_FOR_PROJECT     # Replace this with your base directory path for thorfinn
@@ -127,7 +129,8 @@ pathConfigs:
 
 > [!IMPORTANT]
 > * `taiEMaxHeapGb` is the maximum heap size for Tai-e analysis. If zero, it will calculate the 75% of available memory and use that as the heap size.
-> * `ignoredPackages` is a list of packages that you may want to ignore from verification due to being 3rd party or false positives.
+> * `ignoredTaiePackages` is a list of packages prefix for tai-e that you may want to ignore from verification due to being 3rd party or false positives.
+> * `ignoredSemgrepPackages` is a list of packages prefix for semgrep that you may want to ignore from verification due to being 3rd party or false positives.
 > * `taiEOnlyApp` by default true (strongly recommended for big applications) makes taint analysis only analyze the app code and everything bundled into it (e.g. SDKs). If you want to analyze the whole program including reading their bodies as well, set `taiEOnlyApp` to false in config.yml but this causes issues on larger APKs.
 > * `llmProvider` specifies the LLM you want to use for triaging the findings reported by various tools. Currently, we support OpenAI, Gemini and Anthropic. However, agent mode only supports OpenAI. We also support GitHub Copilot CLI but the CLI should be conifgured in your system and available in PATH.
 

@@ -2,6 +2,7 @@ package com.thorfinn.parsers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.thorfinn.config.ConfigContext;
 import com.thorfinn.models.SemgrepResult;
 import com.thorfinn.models.SemgrepResult.SemgrepFinding;
 import com.thorfinn.utils.PathUtils;
@@ -21,6 +22,36 @@ public class SemgrepParser implements Parsers<SemgrepResult> {
 
     private static final String OUTPUT_FILE = "semgrep_output.json";
     private static final ObjectMapper mapper = new ObjectMapper();
+    private static final List<String> IGNORED_PACKAGES = List.of(
+            "com.google.",
+            "com.facebook.",
+            "com.firebase.",
+            "com.crashlytics.",
+            "com.android.",
+            "android.",
+            "androidx.",
+            "kotlin.",
+            "kotlinx.",
+            "io.fabric.",
+            "io.flutter.",
+            "io.reactivex.",
+            "io.realm.",
+            "org.apache.",
+            "org.json.",
+            "org.xmlpull.",
+            "okhttp3.",
+            "okio.",
+            "retrofit2.",
+            "dagger.",
+            "javax.",
+            "bolts.",
+            "es.voghdev.",
+            "org.jsoup.",
+            "com.netcore.",
+            "HtmlViewHolder",
+            "com.mappls.",
+            "com.sqlitecrypt."
+    );
 
     @Override
     public SemgrepResult parse() throws Exception {
@@ -39,6 +70,19 @@ public class SemgrepParser implements Parsers<SemgrepResult> {
 
         JsonNode root = mapper.readTree(json);
 
+        List<String> ignoredPackages = new ArrayList<>(IGNORED_PACKAGES);
+        List<String> extraIgnoredPackages = ConfigContext.getConfig()
+                .getToolsConfig()
+                .getIgnoredSemgrepPackages();
+        if (extraIgnoredPackages != null && !extraIgnoredPackages.isEmpty()) {
+            extraIgnoredPackages.stream()
+                    .filter(prefix -> prefix != null && !prefix.isBlank())
+                    .map(String::trim)
+                    .forEach(ignoredPackages::add);
+            log.info("[*] Added {} additional Semgrep ignored package(s) from config",
+                    extraIgnoredPackages.size());
+        }
+
         List<SemgrepFinding> findings = new ArrayList<>();
         JsonNode resultsNode = root.path("results");
 
@@ -49,6 +93,11 @@ public class SemgrepParser implements Parsers<SemgrepResult> {
                 int line = node.path("start").path("line").asInt(0);
                 String severity = node.path("extra").path("severity").asText("WARNING");
                 String message = node.path("extra").path("message").asText("");
+
+                if (isIgnoredPackage(filePath, ignoredPackages)) {
+                    log.info("[*] Skipping third-party Semgrep finding: [{}] {}", ruleId, filePath);
+                    continue;
+                }
 
                 String matchedCode = node.path("extra").path("lines").asText("");
 
@@ -87,6 +136,30 @@ public class SemgrepParser implements Parsers<SemgrepResult> {
         }
 
         return result;
+    }
+
+    private boolean isIgnoredPackage(String filePath, List<String> ignoredPackages) {
+        String className = toClassName(filePath);
+        for (String prefix : ignoredPackages) {
+            if (className.startsWith(prefix)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String toClassName(String filePath) {
+        String normalized = filePath.replace('\\', '/');
+        int sourcesIndex = normalized.lastIndexOf("/sources/");
+        if (sourcesIndex >= 0) {
+            normalized = normalized.substring(sourcesIndex + "/sources/".length());
+        } else if (normalized.startsWith("sources/")) {
+            normalized = normalized.substring("sources/".length());
+        }
+        if (normalized.endsWith(".java")) {
+            normalized = normalized.substring(0, normalized.length() - ".java".length());
+        }
+        return normalized.replace('/', '.');
     }
 
     private String extractJson(String rawOutput) {
