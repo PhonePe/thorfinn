@@ -285,7 +285,7 @@ def check_missing_protection_level(manifest: ManifestData) -> list[Finding]:
 
 # ─────────────────────── Check 2: Typos in permission names ───────────────────────
 
-def check_permission_name_typos(manifest: ManifestData) -> list[Finding]:
+def check_permission_name_typos(manifest: ManifestData, all_declared_permissions: set = None, device_permissions: set = None) -> list[Finding]:
     """
     Components reference a permission via android:permission that is NOT declared
     in <permission>. If the string is close to a declared permission, it's likely a typo.
@@ -301,6 +301,10 @@ def check_permission_name_typos(manifest: ManifestData) -> list[Finding]:
         if perm in ANDROID_SYSTEM_PERMISSIONS:
             continue
         if any(perm.startswith(prefix) for prefix in SYSTEM_PERMISSION_PREFIXES):
+            continue
+        if all_declared_permissions is not None and perm not in all_declared_permissions:
+            continue
+        if device_permissions is not None and perm not in device_permissions:
             continue
 
         # Look for close matches among declared permissions
@@ -871,7 +875,7 @@ def generate_json_report(manifest_path: str, package: str, findings: list[Findin
 def run_all_checks(manifest: ManifestData, all_declared_permissions: set, device_permissions: set | None) -> list[Finding]:
     findings: list[Finding] = []
     findings.extend(check_missing_protection_level(manifest))
-    findings.extend(check_permission_name_typos(manifest))
+    findings.extend(check_permission_name_typos(manifest, all_declared_permissions, device_permissions))
     findings.extend(check_component_attribute_typos(manifest))
     findings.extend(check_ecosystem_permission_issues(manifest, all_declared_permissions, device_permissions))
     findings.extend(check_provider_permission_gaps(manifest))
