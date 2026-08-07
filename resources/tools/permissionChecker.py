@@ -282,71 +282,6 @@ def check_missing_protection_level(manifest: ManifestData) -> list[Finding]:
             ))
     return findings
 
-
-# ─────────────────────── Check 2: Typos in permission names ───────────────────────
-
-# def check_permission_name_typos(manifest: ManifestData) -> list[Finding]:
-#     """
-#     Components reference a permission via android:permission that is NOT declared
-#     in <permission>. If the string is close to a declared permission, it's likely a typo.
-#     The undeclared permission defaults to normal -> any app can access the component.
-#     """
-#     findings = []
-#     declared_names = set(manifest.declared_permissions.keys())
-
-#     for comp in manifest.components:
-#         perm = comp["permission"]
-#         if perm is None or perm in declared_names:
-#             continue
-#         if perm in ANDROID_SYSTEM_PERMISSIONS:
-#             continue
-#         if any(perm.startswith(prefix) for prefix in SYSTEM_PERMISSION_PREFIXES):
-#             continue
-
-#         # Look for close matches among declared permissions
-#         close = difflib.get_close_matches(perm, declared_names, n=3, cutoff=0.6)
-#         close_detail = ""
-#         if close:
-#             matched = manifest.declared_permissions.get(close[0], {})
-#             matched_level = matched.get("protectionLevel", "not set")
-#             close_detail = (
-#                 f" This looks like a typo - similar declared permission(s): {close}. "
-#                 f"The declared permission '{close[0]}' has protectionLevel='{matched_level}', "
-#                 f"but since '{perm}' is not declared, it defaults to normal."
-#             )
-
-#         if comp["exported"]:
-#             findings.append(Finding(
-#                 check="Permission Name Typo",
-#                 severity=Severity.HIGH,
-#                 title=(
-#                     f"Component '{comp['name']}' uses undeclared permission '{perm}'"
-#                 ),
-#                 description=(
-#                     f"The {comp['tag']} '{comp['name']}' (exported={comp['exported']}) "
-#                     f"references permission '{perm}' via android:permission, but this "
-#                     f"permission is NOT declared with a <permission> tag in this manifest. "
-#                     f"Undeclared permissions default to protectionLevel='normal', making "
-#                     f"this component accessible to any app.{close_detail}"
-#                 ),
-#                 affected_component=f"{comp['tag']} {comp['name']}",
-#                 permission=perm,
-#                 recommendation=(
-#                     f"Verify the permission name. If it should match a declared permission, "
-#                     f"fix the typo. Otherwise, add a <permission> declaration with an "
-#                     f"appropriate protectionLevel."
-#                 ),
-#                 attack_scenario=(
-#                     f"A malicious app can add "
-#                     f'<uses-permission android:name="{perm}" /> '
-#                     f"to its manifest. Since '{perm}' is not declared anywhere, Android "
-#                     f"treats it as normal and grants it automatically, giving full access "
-#                     f"to {comp['tag']} '{comp['name']}'."
-#                 ),
-#             ))
-#     return findings
-
-
 # ──────────────── Check 3: Typos in component attribute names ────────────────
 
 def check_component_attribute_typos(manifest: ManifestData) -> list[Finding]:
@@ -905,7 +840,6 @@ def generate_json_report(manifest_path: str, package: str, findings: list[Findin
 def run_all_checks(manifest: ManifestData, all_declared_permissions: set, device_permissions: set | None) -> list[Finding]:
     findings: list[Finding] = []
     findings.extend(check_missing_protection_level(manifest))
-    # findings.extend(check_permission_name_typos(manifest))
     findings.extend(check_component_attribute_typos(manifest))
     findings.extend(check_ecosystem_permission_issues(manifest, all_declared_permissions, device_permissions))
     findings.extend(check_provider_permission_gaps(manifest))
