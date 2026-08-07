@@ -282,71 +282,6 @@ def check_missing_protection_level(manifest: ManifestData) -> list[Finding]:
             ))
     return findings
 
-
-# ─────────────────────── Check 2: Typos in permission names ───────────────────────
-
-def check_permission_name_typos(manifest: ManifestData) -> list[Finding]:
-    """
-    Components reference a permission via android:permission that is NOT declared
-    in <permission>. If the string is close to a declared permission, it's likely a typo.
-    The undeclared permission defaults to normal -> any app can access the component.
-    """
-    findings = []
-    declared_names = set(manifest.declared_permissions.keys())
-
-    for comp in manifest.components:
-        perm = comp["permission"]
-        if perm is None or perm in declared_names:
-            continue
-        if perm in ANDROID_SYSTEM_PERMISSIONS:
-            continue
-        if any(perm.startswith(prefix) for prefix in SYSTEM_PERMISSION_PREFIXES):
-            continue
-
-        # Look for close matches among declared permissions
-        close = difflib.get_close_matches(perm, declared_names, n=3, cutoff=0.6)
-        close_detail = ""
-        if close:
-            matched = manifest.declared_permissions.get(close[0], {})
-            matched_level = matched.get("protectionLevel", "not set")
-            close_detail = (
-                f" This looks like a typo - similar declared permission(s): {close}. "
-                f"The declared permission '{close[0]}' has protectionLevel='{matched_level}', "
-                f"but since '{perm}' is not declared, it defaults to normal."
-            )
-
-        if comp["exported"]:
-            findings.append(Finding(
-                check="Permission Name Typo",
-                severity=Severity.HIGH,
-                title=(
-                    f"Component '{comp['name']}' uses undeclared permission '{perm}'"
-                ),
-                description=(
-                    f"The {comp['tag']} '{comp['name']}' (exported={comp['exported']}) "
-                    f"references permission '{perm}' via android:permission, but this "
-                    f"permission is NOT declared with a <permission> tag in this manifest. "
-                    f"Undeclared permissions default to protectionLevel='normal', making "
-                    f"this component accessible to any app.{close_detail}"
-                ),
-                affected_component=f"{comp['tag']} {comp['name']}",
-                permission=perm,
-                recommendation=(
-                    f"Verify the permission name. If it should match a declared permission, "
-                    f"fix the typo. Otherwise, add a <permission> declaration with an "
-                    f"appropriate protectionLevel."
-                ),
-                attack_scenario=(
-                    f"A malicious app can add "
-                    f'<uses-permission android:name="{perm}" /> '
-                    f"to its manifest. Since '{perm}' is not declared anywhere, Android "
-                    f"treats it as normal and grants it automatically, giving full access "
-                    f"to {comp['tag']} '{comp['name']}'."
-                ),
-            ))
-    return findings
-
-
 # ──────────────── Check 3: Typos in component attribute names ────────────────
 
 def check_component_attribute_typos(manifest: ManifestData) -> list[Finding]:
@@ -435,93 +370,127 @@ def fetch_device_permissions() -> set[str] | None:
 
 # ──────────────── Check 4: Ecosystem permission issues ────────────────
 
+def _should_skip_ecosystem_permission(
+    comp: dict,
+    perm: str | None,
+    declared_names: set,
+) -> bool:
+    return (
+        perm is None
+        or not comp["exported"]
+        or perm in ANDROID_SYSTEM_PERMISSIONS
+        or any(perm.startswith(prefix) for prefix in SYSTEM_PERMISSION_PREFIXES)
+        or perm in declared_names
+    )
+
+
+def _classify_external_permission(
+    comp: dict,
+    perm: str,
+    device_permissions: set[str] | None,
+) -> tuple[Severity, str, str, str]:
+    if device_permissions is not None and perm in device_permissions:
+        return (
+            Severity.MEDIUM,
+            f"Component '{comp['name']}' depends on externally declared permission '{perm}'",
+            (
+                "The permission is currently registered by another installed app "
+                "on the connected device (verified via adb). This protection depends "
+                "on that app being installed; if it is absent or uninstalled, the "
+                "component may become vulnerable."
+            ),
+            (
+                f"If the app currently declaring '{perm}' is missing or uninstalled, "
+                f"an attacker app can declare the permission with "
+                f"protectionLevel='normal', request it, and access {comp['tag']} "
+                f"'{comp['name']}'."
+            ),
+        )
+
+    if device_permissions is None:
+        device_note = (
+            "The permission could not be verified on a device because adb was "
+            "unavailable or the query failed. Device absence is not confirmed, "
+            "so this finding is conservatively rated high severity."
+        )
+    else:
+        device_note = (
+            "The permission was not found among third-party permissions "
+            "registered on the connected device (verified via adb), confirming "
+            "that no installed app currently declares it."
+        )
+
+    return (
+        Severity.HIGH,
+        f"Component '{comp['name']}' protected by unavailable permission '{perm}'",
+        device_note,
+        (
+            f"An attacker app can declare '{perm}' with protectionLevel='normal', "
+            f"request it, and access {comp['tag']} '{comp['name']}'."
+        ),
+    )
+
+
 def check_ecosystem_permission_issues(
     manifest: ManifestData,
-    all_declared_permissions: set = None,
+    all_declared_permissions: set | None = None,
     device_permissions: set | None = None,
 ) -> list[Finding]:
     """
-    Detects components protected by permissions not declared in this manifest.
-    Verifies against device-installed permissions (via adb) when available.
-    Only reports if the permission is NOT found on the device either.
+    Detects exported components protected by permissions not declared locally.
+    Permissions declared by another installed app are medium severity because
+    protection depends on that app remaining installed. Missing or unverifiable
+    device declarations are high severity.
     """
     findings = []
     declared_names = set(manifest.declared_permissions.keys())
-    globally_declared = all_declared_permissions or declared_names
+    globally_declared = (
+        all_declared_permissions
+        if all_declared_permissions is not None
+        else declared_names
+    )
 
     for comp in manifest.components:
         perm = comp["permission"]
-        if perm is None:
+        if _should_skip_ecosystem_permission(comp, perm, declared_names):
             continue
-        if perm in ANDROID_SYSTEM_PERMISSIONS:
-            continue
-        if any(perm.startswith(prefix) for prefix in SYSTEM_PERMISSION_PREFIXES):
-            continue
-        if perm in declared_names:
-            continue  # declared locally, safe
-        if perm in globally_declared:
-            continue  # declared in this manifest's own <permission> tags
 
-        # Check if the permission exists on the device
-        if device_permissions is not None and perm in device_permissions:
-            continue  # another app on the device declares it, not vulnerable
+        declared_in_provided_manifest = perm in globally_declared
+        severity, title, device_note, attack_scenario = (
+            _classify_external_permission(comp, perm, device_permissions)
+        )
 
-        on_device_note = ""
-        if device_permissions is not None:
-            on_device_note = (
-                " This permission was also NOT found among third-party permissions "
-                "registered on the connected device (via adb), confirming that no "
-                "installed app currently declares it."
-            )
-        elif device_permissions is None:
-            on_device_note = (
-                " (Could not verify against device - adb was unavailable. "
-                "Run with a device connected to confirm.)"
-            )
+        manifest_note = (
+            "Another provided manifest declares this permission, but this manifest "
+            "does not. "
+            if declared_in_provided_manifest
+            else "No provided manifest declares this permission. "
+        )
 
         perm_pkg = perm.rsplit(".", 1)[0] if "." in perm else ""
         is_foreign = not perm.startswith(manifest.package)
 
-        if comp["exported"]:
-            findings.append(Finding(
-                check="Ecosystem Permission Issue",
-                severity=Severity.HIGH,
-                title=(
-                    f"Component '{comp['name']}' protected by undeclared "
-                    f"permission '{perm}'"
-                ),
-                description=(
-                    f"The {comp['tag']} '{comp['name']}' (exported=true) is guarded by "
-                    f"permission '{perm}', which is NOT declared (<permission>) in this "
-                    f"manifest (package: {manifest.package}). "
-                    f"{'This permission appears to belong to another app (' + perm_pkg + '). ' if is_foreign else ''}"
-                    f"No app in the provided manifests declares this permission.{on_device_note} "
-                    f"If no app on the device declares this permission, Android treats it "
-                    f"as normal (protectionLevel=0x0), meaning ANY app can request and "
-                    f"obtain it."
-                ),
-                affected_component=f"{comp['tag']} {comp['name']}",
-                permission=perm,
-                recommendation=(
-                    f"Declare the permission in THIS manifest as well with the same "
-                    f"protectionLevel, or use a permission that is locally declared. "
-                    f"If the ecosystem requires a shared permission, both apps should "
-                    f"declare it with <permission> and identical protectionLevel."
-                ),
-                attack_scenario=(
-                    f"Attack Scenario 1 - Declare & Access: If the declaring app is not "
-                    f"installed, an attacker app can simply add "
-                    f'<uses-permission android:name="{perm}" /> and access '
-                    f"{comp['tag']} '{comp['name']}' directly since the permission is "
-                    f"treated as normal.\n"
-                    f"Attack Scenario 2 - Hijack the Permission: The attacker app declares "
-                    f"the permission itself with protectionLevel='normal': "
-                    f'<permission android:name="{perm}" '
-                    f'android:protectionLevel="normal" />, then requests it, effectively '
-                    f"taking ownership of the permission definition and gaining full access "
-                    f"to the component."
-                ),
-            ))
+        findings.append(Finding(
+            check="Ecosystem Permission Issue",
+            severity=severity,
+            title=title,
+            description=(
+                f"The {comp['tag']} '{comp['name']}' (exported=true) is guarded by "
+                f"permission '{perm}', which is not declared with <permission> in this "
+                f"manifest (package: {manifest.package}). "
+                f"{'This permission appears to belong to another app (' + perm_pkg + '). ' if is_foreign else ''}"
+                f"{manifest_note}{device_note}"
+            ),
+            affected_component=f"{comp['tag']} {comp['name']}",
+            permission=perm,
+            recommendation=(
+                "Declare the permission in this manifest with the required "
+                "protectionLevel, or use a permission that is locally declared. "
+                "If the ecosystem requires a shared permission, all participating apps "
+                "should declare it with an identical protectionLevel."
+            ),
+            attack_scenario=attack_scenario,
+        ))
     return findings
 
 
@@ -871,7 +840,6 @@ def generate_json_report(manifest_path: str, package: str, findings: list[Findin
 def run_all_checks(manifest: ManifestData, all_declared_permissions: set, device_permissions: set | None) -> list[Finding]:
     findings: list[Finding] = []
     findings.extend(check_missing_protection_level(manifest))
-    findings.extend(check_permission_name_typos(manifest))
     findings.extend(check_component_attribute_typos(manifest))
     findings.extend(check_ecosystem_permission_issues(manifest, all_declared_permissions, device_permissions))
     findings.extend(check_provider_permission_gaps(manifest))
@@ -961,8 +929,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
