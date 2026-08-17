@@ -87,12 +87,22 @@ public class TaiEFlowAgent extends Agent<TaiEAgentModels.FlowRequest, TaiEAgentM
                FALSE POSITIVE if: explicit component set OR FLAG_IMMUTABLE used OR PendingIntent never leaves app process OR setPackage() restricts recipient.
                NOTE: If targetSdkVersion >= 31 and no FLAG_MUTABLE, system throws exception - code likely sets a flag, verify which one.
 
+            9. CustomTabIntent Vulnerability: App uses CustomTabsIntent.launchUrl() with attacker-controlled URL (from Intent extra, deep link, or other input) without validation. If the app communicates with the loaded URL using postMessage APIs, the attacker can load their own malicious URL and exploit the postMessage calls.
+               TRUE POSITIVE if: source exported AND attacker controls URL AND no validation/sanitization of URL before launchUrl().
+               FALSE POSITIVE if: not exported OR URL is hardcoded OR strict allowlist enforced OR URL validated against known safe domains.
+               MANUAL REVIEW NOTE:
+               - Mention the following points AS THEY ARE as references for the end-user to review themselves:
+                  1. Check for postMessage communication between the app and Custom Tab.
+                  2. Check for relaxed `requestPostMessageChannel` implementation.
+                  3. https://developer.android.com/reference/androidx/browser/customtabs/CustomTabsSession#requestPostMessageChannel(android.net.Uri)
+                  4. https://developer.android.com/reference/androidx/browser/customtabs/PostMessageServiceConnection
+
             YOUR JOB:
             1. Is this flow a TRUE POSITIVE or FALSE POSITIVE?
             2. If TRUE POSITIVE, generate a concrete POC.
 
             POC PATTERNS:
-            1. WebView Vulnerability: Single adb command opening attacker URL with all required parameters.
+            1. WebView / CustomTab Vulnerability: Single adb command opening attacker URL with all required parameters.
             2. Third-Party Package Context Code Execution: Describe the attack steps.
             3. Intent Redirection: Single adb command targeting a non-exported component (identify from manifest). No generic examples.
             4. Implicit Intent Interception: Describe the attack and provide sample attacker AndroidManifest.xml intent-filter.

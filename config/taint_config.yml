@@ -126,6 +126,7 @@ sinks:
   - { method: "<android.app.Notification$Builder: android.app.Notification$Builder setDeleteIntent(android.app.PendingIntent)>", index: 0 }
   - { method: "<android.app.Notification$Builder: android.app.Notification$Builder setFullScreenIntent(android.app.PendingIntent,boolean)>", index: 0 }
   - { method: "<android.widget.RemoteViews: void setOnClickPendingIntent(int,android.app.PendingIntent)>", index: 1 }
+  - { method: "<androidx.browser.customtabs.CustomTabsIntent: void launchUrl(android.content.Context,android.net.Uri)>", index: 1 }
 
 transfers:
   - { method: "<android.content.Intent: java.lang.String getStringExtra(java.lang.String)>", from: base, to: result }
