@@ -92,13 +92,24 @@ public class TaiEPOC implements poc {
                VULNERABLE (all three required): (1) Wrapped Intent is implicit - no setComponent/setClass/setClassName/setPackage/new Intent(ctx,Class.class); (2) FLAG_MUTABLE used OR no flag with targetSdkVersion < 31; (3) PendingIntent reaches attacker via an exposure sink.
                FALSE POSITIVE if: explicit component set OR FLAG_IMMUTABLE used OR PendingIntent never leaves app process OR setPackage() restricts recipient.
                NOTE: If targetSdkVersion >= 31 and no FLAG_MUTABLE, system throws exception - code likely sets a flag, verify which one.
+
+            9. CustomTabIntent Vulnerability: App uses CustomTabsIntent.launchUrl() with attacker-controlled URL (from Intent extra, deep link, or other input) without validation. If the app communicates with the loaded URL using postMessage APIs, the attacker can load their own malicious URL and exploit the postMessage calls.
+               Determine whether the app implements postMessage communication with the custom tab:
+                    1. PostMessage communication has been implemented between the app and the custom tab if:
+                        a) The app calls CustomTabsSession.requestPostMessageChannel() with the custom tab's URL. https://developer.android.com/reference/androidx/browser/customtabs/CustomTabsSession#requestPostMessageChannel(android.net.Uri)
+                        b) The app implements a PostMessageServiceConnection to handle postMessage communication. https://developer.android.com/reference/androidx/browser/customtabs/PostMessageServiceConnection
+                        c) The app calls CustomTabsSession.postMessage() to send messages to the custom tab. https://developer.android.com/reference/androidx/browser/customtabs/CustomTabsSession#postMessage(java.lang.String,android.os.Bundle)
+                        d) The app listens for messages from the custom tab using onPostMessage() handler registered via CustomTabsCallback. https://developer.android.com/reference/androidx/browser/customtabs/CustomTabsCallback#onPostMessage(java.lang.String,android.os.Bundle)
+                    2. If postMessage communication is present, the app may be vulnerable to attacks if the custom tab's URL is attacker-controlled and the app does not validate or sanitize the URL before calling launchUrl().
+               TRUE POSITIVE if: source exported AND attacker controls URL AND no validation/sanitization of URL before launchUrl(). Even if no postmessage communication is present, the app may still be vulnerable to attacks if the custom tab's URL is attacker-controlled and the app does not validate or sanitize the URL before calling launchUrl().
+               FALSE POSITIVE if: not exported OR URL is hardcoded OR strict allowlist enforced OR URL validated against known safe domains.
             
             YOUR JOB:
             1. Is this flow a TRUE POSITIVE or FALSE POSITIVE?
             2. If TRUE POSITIVE, generate a concrete POC.
             
             POC PATTERNS:
-            1. WebView Vulnerability: Single adb command opening attacker URL (use https://example.com in case of arbitrary URL else decide yourself on cases of endswith etc.) with all required parameters.
+            1. WebView / CustomTab Vulnerability: Single adb command opening attacker URL (use https://example.com in case of arbitrary URL else decide yourself on cases of endswith etc.) with all required parameters.
             2. Third-Party Package Context Code Execution: Describe the attack steps.
             3. Intent Redirection: Single adb command targeting a non-exported component (identify from manifest). No generic examples.
             4. Implicit Intent Interception: Describe the attack and provide sample attacker AndroidManifest.xml intent-filter.
