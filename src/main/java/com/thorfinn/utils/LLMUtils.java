@@ -7,6 +7,7 @@ import com.thorfinn.llm.AnthropicClient;
 import com.thorfinn.llm.GeminiClient;
 import com.thorfinn.llm.GitHubCopilotClient;
 import com.thorfinn.llm.LLMClient;
+import com.thorfinn.llm.AntigravityClient;
 import com.thorfinn.llm.OpenAIClient;
 
 public final class LLMUtils {
@@ -48,7 +49,7 @@ public final class LLMUtils {
                 toolsConfig.getLlmModel()
                 );
             case "antigravity", "agy" ->
-                new com.thorfinn.llm.AntigravityClient(
+                new AntigravityClient(
                 toolsConfig.getLlmModel()
                 );
             default ->
