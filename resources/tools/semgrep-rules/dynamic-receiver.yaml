@@ -4,10 +4,15 @@ rules:
   # Rule 1: registerReceiver with inline IntentFilter constructor (string literal action)
   - id: dynamic-receiver-inline-filter
     patterns:
-      - pattern: |
-          $RECV = new $RECEIVER_CLASS(...);
-          ...
-          registerReceiver($RECV, new IntentFilter($ACTION), ...);
+      - pattern-either:
+          - pattern: |
+              $RECV = new $RECEIVER_CLASS(...);
+              ...
+              registerReceiver($RECV, new IntentFilter($ACTION), ...);
+          - pattern: |
+              $RECV = new $RECEIVER_CLASS(...);
+              ...
+              ContextCompat.registerReceiver($CTX, $RECV, new IntentFilter($ACTION), ...);
       - metavariable-regex:
           metavariable: $ACTION
           regex: ^"(?!android\.intent\.action\.|com\.google\.).*"$
@@ -23,12 +28,19 @@ rules:
   # Rule 2: registerReceiver with IntentFilter constructed separately (string literal action)
   - id: dynamic-receiver-separate-filter
     patterns:
-      - pattern: |
-          $RECV = new $RECEIVER_CLASS(...);
-          ...
-          $FILTER = new IntentFilter($ACTION);
-          ...
-          registerReceiver($RECV, $FILTER, ...);
+      - pattern-either:
+          - pattern: |
+              $RECV = new $RECEIVER_CLASS(...);
+              ...
+              $FILTER = new IntentFilter($ACTION);
+              ...
+              registerReceiver($RECV, $FILTER, ...);
+          - pattern: |
+              $RECV = new $RECEIVER_CLASS(...);
+              ...
+              $FILTER = new IntentFilter($ACTION);
+              ...
+              ContextCompat.registerReceiver($CTX, $RECV, $FILTER, ...);
       - metavariable-regex:
           metavariable: $ACTION
           regex: ^"(?!android\.intent\.action\.|com\.google\.).*"$
@@ -44,10 +56,15 @@ rules:
   # Rule 3: IntentFilter with addAction() then registerReceiver (string literal action)
   - id: dynamic-receiver-add-action
     patterns:
-      - pattern: |
-          $FILTER.addAction($ACTION);
-          ...
-          registerReceiver($RECV, $FILTER, ...);
+      - pattern-either:
+          - pattern: |
+              $FILTER.addAction($ACTION);
+              ...
+              registerReceiver($RECV, $FILTER, ...);
+          - pattern: |
+              $FILTER.addAction($ACTION);
+              ...
+              ContextCompat.registerReceiver($CTX, $RECV, $FILTER, ...);
       - metavariable-regex:
           metavariable: $ACTION
           regex: ^"(?!android\.intent\.action\.|com\.google\.).*"$
@@ -67,12 +84,19 @@ rules:
   # Rule 4: Variable action with separate IntentFilter + receiver instantiation
   - id: dynamic-receiver-variable-action-separate
     patterns:
-      - pattern: |
-          $RECV = new $RECEIVER_CLASS(...);
-          ...
-          $FILTER = new IntentFilter($ACTION);
-          ...
-          registerReceiver($RECV, $FILTER, ...);
+      - pattern-either:
+          - pattern: |
+              $RECV = new $RECEIVER_CLASS(...);
+              ...
+              $FILTER = new IntentFilter($ACTION);
+              ...
+              registerReceiver($RECV, $FILTER, ...);
+          - pattern: |
+              $RECV = new $RECEIVER_CLASS(...);
+              ...
+              $FILTER = new IntentFilter($ACTION);
+              ...
+              ContextCompat.registerReceiver($CTX, $RECV, $FILTER, ...);
       - metavariable-regex:
           metavariable: $ACTION
           regex: ^[A-Za-z_]
@@ -88,10 +112,15 @@ rules:
   # Rule 5: Variable action with inline IntentFilter + receiver instantiation
   - id: dynamic-receiver-variable-action-inline
     patterns:
-      - pattern: |
-          $RECV = new $RECEIVER_CLASS(...);
-          ...
-          registerReceiver($RECV, new IntentFilter($ACTION), ...);
+      - pattern-either:
+          - pattern: |
+              $RECV = new $RECEIVER_CLASS(...);
+              ...
+              registerReceiver($RECV, new IntentFilter($ACTION), ...);
+          - pattern: |
+              $RECV = new $RECEIVER_CLASS(...);
+              ...
+              ContextCompat.registerReceiver($CTX, $RECV, new IntentFilter($ACTION), ...);
       - metavariable-regex:
           metavariable: $ACTION
           regex: ^[A-Za-z_]
@@ -107,10 +136,15 @@ rules:
   # Rule 6: Variable action via addAction()
   - id: dynamic-receiver-variable-add-action
     patterns:
-      - pattern: |
-          $FILTER.addAction($ACTION);
-          ...
-          registerReceiver($RECV, $FILTER, ...);
+      - pattern-either:
+          - pattern: |
+              $FILTER.addAction($ACTION);
+              ...
+              registerReceiver($RECV, $FILTER, ...);
+          - pattern: |
+              $FILTER.addAction($ACTION);
+              ...
+              ContextCompat.registerReceiver($CTX, $RECV, $FILTER, ...);
       - metavariable-regex:
           metavariable: $ACTION
           regex: ^[A-Za-z_]
@@ -129,10 +163,15 @@ rules:
   # Rule 7: Anonymous receiver + separate filter + variable action
   - id: dynamic-receiver-anon-variable-action-separate
     patterns:
-      - pattern: |
-          $FILTER = new IntentFilter($ACTION);
-          ...
-          registerReceiver($RECV, $FILTER, ...);
+      - pattern-either:
+          - pattern: |
+              $FILTER = new IntentFilter($ACTION);
+              ...
+              registerReceiver($RECV, $FILTER, ...);
+          - pattern: |
+              $FILTER = new IntentFilter($ACTION);
+              ...
+              ContextCompat.registerReceiver($CTX, $RECV, $FILTER, ...);
       - metavariable-regex:
           metavariable: $ACTION
           regex: ^[A-Za-z_]
@@ -148,10 +187,15 @@ rules:
   # Rule 8: Anonymous receiver + separate filter + string literal action
   - id: dynamic-receiver-anon-separate-filter
     patterns:
-      - pattern: |
-          $FILTER = new IntentFilter($ACTION);
-          ...
-          registerReceiver($RECV, $FILTER, ...);
+      - pattern-either:
+          - pattern: |
+              $FILTER = new IntentFilter($ACTION);
+              ...
+              registerReceiver($RECV, $FILTER, ...);
+          - pattern: |
+              $FILTER = new IntentFilter($ACTION);
+              ...
+              ContextCompat.registerReceiver($CTX, $RECV, $FILTER, ...);
       - metavariable-regex:
           metavariable: $ACTION
           regex: ^"(?!android\.intent\.action\.|com\.google\.).*"$
@@ -164,11 +208,53 @@ rules:
       category: security
       subcategory: dynamic-receiver
 
+  # ─────────────── Inline IntentFilter rules ───────────────
+  # These match when the IntentFilter is constructed inline within the registerReceiver call.
+
+  # Rule 9: Inline IntentFilter with custom string literal action
+  - id: dynamic-receiver-inline-intent-filter
+    patterns:
+      - pattern-either:
+          - pattern: registerReceiver($RECV, new IntentFilter($ACTION), ...)
+          - pattern: ContextCompat.registerReceiver($CTX, $RECV, new IntentFilter($ACTION), ...)
+      - metavariable-regex:
+          metavariable: $ACTION
+          regex: ^"(?!android\.intent\.action\.|com\.google\.).*"$
+    message: >
+      Dynamically registered receiver with custom action $ACTION via inline IntentFilter.
+      Custom actions are externally triggerable.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: dynamic-receiver
+
+  # Rule 10: Inline IntentFilter with variable action
+  - id: dynamic-receiver-inline-intent-filter-variable
+    patterns:
+      - pattern-either:
+          - pattern: registerReceiver($RECV, new IntentFilter($ACTION), ...)
+          - pattern: ContextCompat.registerReceiver($CTX, $RECV, new IntentFilter($ACTION), ...)
+      - metavariable-regex:
+          metavariable: $ACTION
+          regex: ^[A-Za-z_]
+    message: >
+      Dynamically registered receiver with variable-based action $ACTION via inline IntentFilter.
+      Resolve the variable to determine if the action is custom or system.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: dynamic-receiver
+
   # ─────────────── Exported flag rules ───────────────
 
-  # Rule 7: registerReceiver with explicit RECEIVER_EXPORTED flag (value 2)
+  # Rule 11: registerReceiver / ContextCompat.registerReceiver with explicit RECEIVER_EXPORTED flag (value 2)
   - id: dynamic-receiver-exported-flag
-    pattern: registerReceiver($RECV, $FILTER, 2)
+    pattern-either:
+      - pattern: registerReceiver($RECV, $FILTER, 2)
+      - pattern: ContextCompat.registerReceiver($CTX, $RECV, $FILTER, 2)
+      - pattern: ContextCompat.registerReceiver($CTX, $RECV, $FILTER, $PERMISSION, $SCHEDULER, 2)
     message: >
       BroadcastReceiver registered with RECEIVER_EXPORTED flag.
       This receiver is explicitly exposed to external apps.
@@ -178,11 +264,17 @@ rules:
       category: security
       subcategory: dynamic-receiver
 
-  # Rule 8: registerReceiver with Context.RECEIVER_EXPORTED constant
+  # Rule 12: registerReceiver / ContextCompat.registerReceiver with RECEIVER_EXPORTED constant
   - id: dynamic-receiver-exported-constant
-    pattern: registerReceiver($RECV, $FILTER, Context.RECEIVER_EXPORTED)
+    pattern-either:
+      - pattern: registerReceiver($RECV, $FILTER, Context.RECEIVER_EXPORTED)
+      - pattern: registerReceiver($RECV, $FILTER, ContextCompat.RECEIVER_EXPORTED)
+      - pattern: ContextCompat.registerReceiver($CTX, $RECV, $FILTER, Context.RECEIVER_EXPORTED)
+      - pattern: ContextCompat.registerReceiver($CTX, $RECV, $FILTER, ContextCompat.RECEIVER_EXPORTED)
+      - pattern: ContextCompat.registerReceiver($CTX, $RECV, $FILTER, $PERMISSION, $SCHEDULER, Context.RECEIVER_EXPORTED)
+      - pattern: ContextCompat.registerReceiver($CTX, $RECV, $FILTER, $PERMISSION, $SCHEDULER, ContextCompat.RECEIVER_EXPORTED)
     message: >
-      BroadcastReceiver registered with Context.RECEIVER_EXPORTED.
+      BroadcastReceiver registered with RECEIVER_EXPORTED constant.
       This receiver is explicitly exposed to external apps.
     languages: [java]
     severity: WARNING
@@ -190,3 +282,22 @@ rules:
       category: security
       subcategory: dynamic-receiver
 
+  # Rule 13: registerReceiver / ContextCompat.registerReceiver with null broadcastPermission (explicit or implicit)
+  - id: dynamic-receiver-null-permission
+    pattern-either:
+      # Explicit null permission
+      - pattern: registerReceiver($RECV, $FILTER, null, $SCHEDULER)
+      - pattern: registerReceiver($RECV, $FILTER, null, $SCHEDULER, $FLAGS)
+      - pattern: ContextCompat.registerReceiver($CTX, $RECV, $FILTER, null, $SCHEDULER, $FLAGS)
+      # Implicit null permission (no broadcastPermission argument)
+      - pattern: registerReceiver($RECV, $FILTER)
+      - pattern: registerReceiver($RECV, $FILTER, $FLAGS)
+      - pattern: ContextCompat.registerReceiver($CTX, $RECV, $FILTER, $FLAGS)
+    message: >
+      registerReceiver or ContextCompat.registerReceiver called with broadcastPermission set to null or omitted.
+      This allows any application to send broadcasts to this receiver.
+    languages: [java]
+    severity: WARNING
+    metadata:
+      category: security
+      subcategory: dynamic-receiver
