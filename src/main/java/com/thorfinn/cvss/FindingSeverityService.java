@@ -2,6 +2,7 @@ package com.thorfinn.cvss;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import com.thorfinn.config.Config;
@@ -277,6 +278,9 @@ public class FindingSeverityService {
             if (f == null) {
                 continue;
             }
+            if (f.isCarriedOver() && f.getSeverity() != null && !f.getSeverity().isBlank() && f.getCvssScore() != null) {
+                continue;
+            }
             boolean isDeviceVerified = isVerified(r);
             evaluateFinding(f, isDeviceVerified);
         }
@@ -333,15 +337,25 @@ public class FindingSeverityService {
                 finding.getSeverity(), finding.getCvssScore(), finding.getCvssBaseScore(), finding.getCvssVector());
     }
 
-    private boolean isVerified(VerificationResult r) {
+    boolean isVerified(VerificationResult r) {
         if (r == null) {
             return false;
         }
         String status = r.getStatus();
-        if ("SUCCESS".equalsIgnoreCase(status) || "VERIFIED".equalsIgnoreCase(status)) {
-            return true;
+        if (status == null || status.isBlank()) {
+            return false;
         }
-        return r.getEvidence() != null && !r.getEvidence().isEmpty();
+        String normalized = status.trim().toUpperCase(Locale.ROOT);
+        return switch (normalized) {
+            case "EXECUTED" ->
+                true;
+            case "CARRIED_OVER" ->
+                r.getEvidence() != null && !r.getEvidence().isEmpty();
+            case "EXECUTED_NO_EVIDENCE", "MANUAL_VERIFICATION", "SKIPPED", "ERROR", "LLM_ERROR", "FALSE_POSITIVE" ->
+                false;
+            default ->
+                false;
+        };
     }
 
     private CvssMetricDefinition resolveMetricDefinition(String vulnClass, String tool) {
