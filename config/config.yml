@@ -120,7 +120,7 @@ cvssConfig:
       subsequentSystemIntegrity: HIGH
       subsequentSystemAvailability: NONE
     "WebView Vulnerability":
-      attackVector: NETWORK
+      attackVector: LOCAL
       attackComplexity: LOW
       attackRequirements: NONE
       privilegesRequired: NONE
@@ -132,7 +132,7 @@ cvssConfig:
       subsequentSystemIntegrity: LOW
       subsequentSystemAvailability: NONE
     "CustomTabIntent Vulnerability":
-      attackVector: NETWORK
+      attackVector: LOCAL
       attackComplexity: LOW
       attackRequirements: NONE
       privilegesRequired: NONE

@@ -112,7 +112,7 @@ public class FindingSeverityService {
                 .build());
 
         DEFAULT_METRIC_MATRIX.put("WebView Vulnerability", CvssMetricDefinition.builder()
-                .attackVector("NETWORK")
+                .attackVector("LOCAL")
                 .attackComplexity("LOW")
                 .attackRequirements("NONE")
                 .privilegesRequired("NONE")
@@ -122,7 +122,7 @@ public class FindingSeverityService {
                 .build());
 
         DEFAULT_METRIC_MATRIX.put("CustomTabIntent Vulnerability", CvssMetricDefinition.builder()
-                .attackVector("NETWORK").attackComplexity("LOW").attackRequirements("NONE")
+                .attackVector("LOCAL").attackComplexity("LOW").attackRequirements("NONE")
                 .privilegesRequired("NONE").userInteraction("PASSIVE")
                 .vulnerableSystemConfidentiality("LOW").vulnerableSystemIntegrity("LOW").vulnerableSystemAvailability("NONE")
                 .subsequentSystemConfidentiality("NONE").subsequentSystemIntegrity("NONE").subsequentSystemAvailability("NONE")
