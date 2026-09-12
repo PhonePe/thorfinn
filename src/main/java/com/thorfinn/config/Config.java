@@ -6,4 +6,5 @@ import lombok.Data;
 public class Config {
     private ToolsConfig toolsConfig;
     private PathConfigs pathConfigs;
+    private CvssConfig cvssConfig;
 }
