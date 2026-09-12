@@ -1,16 +1,5 @@
 package com.thorfinn.report;
 
-import com.thorfinn.models.Finding;
-import com.thorfinn.models.ManifestInfo;
-import com.thorfinn.models.ManifestInfo.ExportedComponent;
-import com.thorfinn.models.VerificationResult;
-import com.thorfinn.utils.PathUtils;
-import lombok.extern.slf4j.Slf4j;
-import org.commonmark.Extension;
-import org.commonmark.ext.gfm.tables.TablesExtension;
-import org.commonmark.parser.Parser;
-import org.commonmark.renderer.html.HtmlRenderer;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,8 +8,22 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import org.commonmark.Extension;
+import org.commonmark.ext.gfm.tables.TablesExtension;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
+
+import com.thorfinn.models.Finding;
+import com.thorfinn.models.ManifestInfo;
+import com.thorfinn.models.ManifestInfo.ExportedComponent;
+import com.thorfinn.models.VerificationResult;
+import com.thorfinn.utils.PathUtils;
+
+import lombok.extern.slf4j.Slf4j;
+
 @Slf4j
 public class HtmlReportGenerator {
+
     private static final String REPORT_DIR = PathUtils.getBaseDirectory();
     private static final List<Extension> MARKDOWN_EXTENSIONS = List.of(TablesExtension.create());
     private static final Parser MARKDOWN_PARSER = Parser.builder()
@@ -32,14 +35,18 @@ public class HtmlReportGenerator {
             .sanitizeUrls(true)
             .softbreak("<br>\n")
             .attributeProviderFactory(context -> (node, tagName, attributes) -> {
-                if ("a".equals(tagName)) {
-                    attributes.put("target", "_blank");
-                    attributes.put("rel", "noopener noreferrer");
-                }
-            })
+        if ("a".equals(tagName)) {
+            attributes.put("target", "_blank");
+            attributes.put("rel", "noopener noreferrer");
+        }
+    })
             .build();
 
     public void generateReport(List<VerificationResult> results, ManifestInfo manifestInfo) {
+        generateReport(results, manifestInfo, Paths.get(REPORT_DIR, "thorfinn_report.html"));
+    }
+
+    public void generateReport(List<VerificationResult> results, ManifestInfo manifestInfo, Path outputPath) {
         List<VerificationResult> visibleResults = results.stream()
                 .filter(r -> r.getFinding() == null || !r.getFinding().isCarriedOver())
                 .toList();
@@ -54,12 +61,12 @@ public class HtmlReportGenerator {
         html.append(buildFooter());
         html.append("</body>\n</html>");
 
-        String reportPath = Paths.get(REPORT_DIR, "thorfinn_report.html").toString();
         try {
-            Path path = Path.of(reportPath);
-            Files.createDirectories(path.getParent());
-            Files.writeString(path, html.toString());
-            log.info("[*] HTML report generated: {}", path.toAbsolutePath());
+            if (outputPath.getParent() != null) {
+                Files.createDirectories(outputPath.getParent());
+            }
+            Files.writeString(outputPath, html.toString());
+            log.info("[*] HTML report generated: {}", outputPath.toAbsolutePath());
         } catch (IOException e) {
             log.error("[!] Failed to write HTML report: {}", e.getMessage());
         }
@@ -191,6 +198,7 @@ public class HtmlReportGenerator {
                     .value.red { color: var(--accent-red); }
                     .value.yellow { color: var(--accent-yellow); }
                     .value.blue { color: var(--accent-blue); }
+                    .value.orange { color: var(--accent-orange); }
                     .section-title {
                         font-family: 'Playfair Display', 'Georgia', serif;
                         font-size: 1.6rem;
@@ -297,6 +305,12 @@ public class HtmlReportGenerator {
                     .badge-error { background: #fff8e1; color: var(--accent-yellow); border: 1px solid var(--accent-yellow); }
                     .badge-skipped { background: #fff8e1; color: var(--accent-yellow); border: 1px solid #c9a800; }
                     .badge-fp { background: #e8f5e9; color: var(--accent-green); border: 1px solid var(--accent-green); }
+                    .badge-critical { background: #fee2e2; color: #991b1b; border: 1px solid #ef4444; }
+                    .badge-high { background: #ffedd5; color: #c2410c; border: 1px solid #f97316; }
+                    .badge-medium { background: #fef9c3; color: #854d0e; border: 1px solid #eab308; }
+                    .badge-low { background: #dbeafe; color: #1e40af; border: 1px solid #3b82f6; }
+                    .badge-none { background: #f3f4f6; color: #374151; border: 1px solid #9ca3af; }
+                    .badge-unknown { background: #f3f4f6; color: #6b7280; border: 1px solid #d1d5db; }
                     .finding-detail {
                         background: var(--bg-card);
                         border: none;
@@ -351,6 +365,22 @@ public class HtmlReportGenerator {
                         font-size: 0.85rem;
                         word-break: break-word;
                         overflow-wrap: anywhere;
+                    }
+                    .detail-item a {
+                        color: var(--accent-blue);
+                        text-decoration: none;
+                    }
+                    .detail-item a:hover {
+                        text-decoration: underline;
+                    }
+                    .detail-item code {
+                        font-family: 'IBM Plex Mono', monospace;
+                        font-size: 0.78rem;
+                        background: var(--bg-secondary);
+                        border: 1px solid var(--border-soft);
+                        padding: 0.1rem 0.35rem;
+                        border-radius: 3px;
+                        word-break: break-all;
                     }
                     .code-block {
                         background: var(--bg-secondary);
@@ -633,7 +663,9 @@ public class HtmlReportGenerator {
     }
 
     private String buildAppInfoSection(ManifestInfo info) {
-        if (info == null) return "";
+        if (info == null) {
+            return "";
+        }
 
         StringBuilder sb = new StringBuilder();
         sb.append("<h2 class=\"section-title\">📱 Application Info</h2>\n");
@@ -667,7 +699,9 @@ public class HtmlReportGenerator {
     }
 
     private String buildExportedComponentTable(String title, String id, List<ExportedComponent> components) {
-        if (components == null || components.isEmpty()) return "";
+        if (components == null || components.isEmpty()) {
+            return "";
+        }
 
         StringBuilder content = new StringBuilder();
         content.append("<table style=\"margin-top:0.5rem\">\n<thead><tr>");
@@ -709,6 +743,11 @@ public class HtmlReportGenerator {
         long errors = results.stream().filter(r -> "ERROR".equals(r.getStatus()) || isAnalysisError(r)).count();
         long totalFindings = results.size();
 
+        long critical = results.stream().filter(r -> r.getFinding() != null && "CRITICAL".equalsIgnoreCase(r.getFinding().getSeverity())).count();
+        long high = results.stream().filter(r -> r.getFinding() != null && "HIGH".equalsIgnoreCase(r.getFinding().getSeverity())).count();
+        long medium = results.stream().filter(r -> r.getFinding() != null && "MEDIUM".equalsIgnoreCase(r.getFinding().getSeverity())).count();
+        long low = results.stream().filter(r -> r.getFinding() != null && "LOW".equalsIgnoreCase(r.getFinding().getSeverity())).count();
+
         return """
                 <div class="summary-grid">
                     <div class="summary-card">
@@ -732,16 +771,36 @@ public class HtmlReportGenerator {
                         <div class="label">Errors</div>
                     </div>
                 </div>
-                """.formatted(totalFindings, truePositives, falsePositives, executed, errors);
+                <div class="summary-grid" style="margin-top: 1rem;">
+                    <div class="summary-card">
+                        <div class="value red">%d</div>
+                        <div class="label">Critical (CVSS v4)</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="value orange">%d</div>
+                        <div class="label">High (CVSS v4)</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="value yellow">%d</div>
+                        <div class="label">Medium (CVSS v4)</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="value blue">%d</div>
+                        <div class="label">Low (CVSS v4)</div>
+                    </div>
+                </div>
+                """.formatted(totalFindings, truePositives, falsePositives, executed, errors, critical, high, medium, low);
     }
 
-    private String buildFindingsSection(List<VerificationResult> results) {
-        if (results.isEmpty()) return "";
+    String buildFindingsSection(List<VerificationResult> results) {
+        if (results.isEmpty()) {
+            return "";
+        }
         StringBuilder sb = new StringBuilder();
         sb.append("<h2 class=\"section-title\">🔍 Security Findings</h2>\n");
 
         sb.append("<table class=\"findings-table\">\n<thead><tr>");
-        sb.append("<th>#</th><th>Vulnerability</th><th class=\"wrap-cell\">Source</th><th class=\"wrap-cell\">Sink</th><th>Status</th>");
+        sb.append("<th>#</th><th>Severity</th><th>Vulnerability</th><th class=\"wrap-cell\">Source</th><th class=\"wrap-cell\">Sink</th><th>Status</th>");
         sb.append("</tr></thead>\n<tbody>\n");
 
         for (int i = 0; i < results.size(); i++) {
@@ -767,6 +826,7 @@ public class HtmlReportGenerator {
 
             sb.append("<tr").append(rowClass).append(">");
             sb.append("<td>").append(i + 1).append("</td>");
+            sb.append("<td>").append(getSeverityBadge(f)).append("</td>");
             sb.append("<td><span class=\"vuln-tag\">").append(escapeHtml(nullSafe(f.getVulnerabilityClass()))).append("</span></td>");
             sb.append("<td class=\"wrap-cell\">").append(escapeHtml(source)).append("</td>");
             sb.append("<td class=\"wrap-cell\">").append(escapeHtml(sink)).append("</td>");
@@ -798,6 +858,13 @@ public class HtmlReportGenerator {
             String statusText = f.isAnalysisError() ? "LLM Error" : (r.isTruePositive() ? "True Positive" : "False Positive");
             sb.append("<div class=\"detail-grid\">\n");
             sb.append(detailItem("Status", statusText));
+            sb.append(detailItemHtml("Severity", getSeverityBadge(f)));
+            if (f.getCvssScore() != null) {
+                sb.append(detailItem("CVSS v4.0 Score", String.format("%.1f (Base: %.1f)", f.getCvssScore(), f.getCvssBaseScore() != null ? f.getCvssBaseScore() : f.getCvssScore())));
+            }
+            if (f.getCvssVector() != null && !f.getCvssVector().isBlank()) {
+                sb.append(detailItemHtml("CVSS v4.0 Vector", buildCvssCalculatorLink(f.getCvssVector())));
+            }
             sb.append(detailItem("App Version", nullSafe(f.getVersion())));
             sb.append(detailItem("Tool", getToolDisplayName(f.getTool())));
             sb.append(detailItem("Source", source));
@@ -817,8 +884,35 @@ public class HtmlReportGenerator {
         return sb.toString();
     }
 
+    private String getSeverityBadge(Finding f) {
+        if (f == null || f.getSeverity() == null) {
+            return "<span class=\"badge badge-unknown\">UNKNOWN</span>";
+        }
+        String sev = f.getSeverity().toUpperCase();
+        String badgeClass = switch (sev) {
+            case "CRITICAL" ->
+                "badge-critical";
+            case "HIGH" ->
+                "badge-high";
+            case "MEDIUM" ->
+                "badge-medium";
+            case "LOW" ->
+                "badge-low";
+            case "NONE" ->
+                "badge-none";
+            default ->
+                "badge-unknown";
+        };
+        String scoreText = (f.getCvssScore() != null && f.getCvssScore() > 0.0)
+                ? " " + String.format("%.1f", f.getCvssScore())
+                : "";
+        return "<span class=\"badge " + badgeClass + "\">" + escapeHtml(sev) + scoreText + "</span>";
+    }
+
     private String getDisplaySource(Finding f) {
-        if (f.getSourceFile() == null || f.getSourceFile().isBlank()) return "N/A";
+        if (f.getSourceFile() == null || f.getSourceFile().isBlank()) {
+            return "N/A";
+        }
         return toRelativePath(f.getSourceFile());
     }
 
@@ -827,18 +921,27 @@ public class HtmlReportGenerator {
         if ("permissionChecker".equals(tool) || "truffleHog".equals(tool)) {
             return "N/A";
         }
-        if (f.getSinkFile() == null || f.getSinkFile().isBlank()) return "N/A";
+        if (f.getSinkFile() == null || f.getSinkFile().isBlank()) {
+            return "N/A";
+        }
         return toRelativePath(f.getSinkFile());
     }
 
     private String getToolDisplayName(String tool) {
-        if (tool == null) return "Unknown";
+        if (tool == null) {
+            return "Unknown";
+        }
         return switch (tool) {
-            case "taie" -> "TaiE";
-            case "permissionChecker" -> "PermissionChecker";
-            case "truffleHog" -> "TruffleHog";
-            case "semgrep" -> "Semgrep";
-            default -> tool;
+            case "taie" ->
+                "TaiE";
+            case "permissionChecker" ->
+                "PermissionChecker";
+            case "truffleHog" ->
+                "TruffleHog";
+            case "semgrep" ->
+                "Semgrep";
+            default ->
+                tool;
         };
     }
 
@@ -864,7 +967,6 @@ public class HtmlReportGenerator {
             sb.append(collapsibleSection("error-" + idx, "Error Details", r.getErrorMessage()));
         }
     }
-
 
     private String collapsibleSection(String id, String title, String content) {
         return collapsibleSection(id, title, content, false);
@@ -925,6 +1027,24 @@ public class HtmlReportGenerator {
                 """.formatted(escapeHtml(label), escapeHtml(value));
     }
 
+    private String detailItemHtml(String label, String htmlValue) {
+        return """
+                <div class="detail-item">
+                    <label>%s</label>
+                    <span>%s</span>
+                </div>
+                """.formatted(escapeHtml(label), htmlValue);
+    }
+
+    String buildCvssCalculatorLink(String vector) {
+        if (vector == null || vector.isBlank()) {
+            return "N/A";
+        }
+        String trimmed = vector.trim();
+        String href = "https://www.first.org/cvss/calculator/4.0#" + escapeHtml(trimmed);
+        return "<a href=\"" + href + "\" target=\"_blank\" rel=\"noopener noreferrer\"><code>" + escapeHtml(trimmed) + "</code></a>";
+    }
+
     private String buildFooter() {
         return """
                 <div class="footer">
@@ -940,7 +1060,9 @@ public class HtmlReportGenerator {
     }
 
     private String escapeHtml(String text) {
-        if (text == null) return "";
+        if (text == null) {
+            return "";
+        }
         return text.replace("&", "&amp;")
                 .replace("<", "&lt;")
                 .replace(">", "&gt;")
@@ -953,7 +1075,9 @@ public class HtmlReportGenerator {
     }
 
     private String toRelativePath(String absolutePath) {
-        if (absolutePath == null) return "N/A";
+        if (absolutePath == null) {
+            return "N/A";
+        }
         int idx = absolutePath.indexOf("decompiled_apks/");
         if (idx != -1) {
             return absolutePath.substring(idx + "decompiled_apks/".length());
