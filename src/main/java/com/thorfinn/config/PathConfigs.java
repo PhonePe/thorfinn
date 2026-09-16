@@ -13,4 +13,5 @@ public class PathConfigs {
     private String semgrepRulesPath;
     private String outputPath;
     private String apkPath;
+    private String cvssConfigPath;
 }

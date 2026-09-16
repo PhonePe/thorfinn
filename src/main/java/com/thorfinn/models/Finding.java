@@ -17,4 +17,8 @@ public class Finding {
     private String vulnerabilityClass;
     private String analysis;
     private String poc;
+    private String severity;
+    private Double cvssScore;
+    private Double cvssBaseScore;
+    private String cvssVector;
 }

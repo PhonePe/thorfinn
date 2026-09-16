@@ -93,7 +93,7 @@ public class TaiEPOC implements poc {
                FALSE POSITIVE if: explicit component set OR FLAG_IMMUTABLE used OR PendingIntent never leaves app process OR setPackage() restricts recipient.
                NOTE: If targetSdkVersion >= 31 and no FLAG_MUTABLE, system throws exception - code likely sets a flag, verify which one.
 
-            9. CustomTabIntent Vulnerability: App uses CustomTabsIntent.launchUrl() with attacker-controlled URL (from Intent extra, deep link, or other input) without validation. If the app communicates with the loaded URL using postMessage APIs, the attacker can load their own malicious URL and exploit the postMessage calls.
+            9. CustomTab Vulnerability: App uses CustomTabsIntent.launchUrl() with attacker-controlled URL (from Intent extra, deep link, or other input) without validation. If the app communicates with the loaded URL using postMessage APIs, the attacker can load their own malicious URL and exploit the postMessage calls.
                Determine whether the app implements postMessage communication with the custom tab:
                     1. PostMessage communication has been implemented between the app and the custom tab if:
                         a) The app calls CustomTabsSession.requestPostMessageChannel() with the custom tab's URL. https://developer.android.com/reference/androidx/browser/customtabs/CustomTabsSession#requestPostMessageChannel(android.net.Uri)
@@ -222,8 +222,11 @@ public class TaiEPOC implements poc {
                     "taie", flow.getSourceFile(), flow.getSinkFile(), flow.getRawFlow());
             if (reused != null) {
                 boolean tp = reused.isTruePositive();
-                if (tp) truePositives++;
-                else falsePositives++;
+                if (tp) {
+                    truePositives++; 
+                }else {
+                    falsePositives++;
+                }
                 findings.add(reused);
                 String verdictLabel = tp ? "✅ TRUE POSITIVE" : "❌ FALSE POSITIVE";
                 allResults.append(String.format("| %d | `%s` | `%s` | %s |\n",
@@ -397,8 +400,8 @@ public class TaiEPOC implements poc {
     }
 
     private String buildUserPrompt(TaintFlowInfo flow, String sourceCode, String sinkCode,
-                                    Map<String, String> intermediateCode,
-                                    String manifest, String codeLabel) {
+            Map<String, String> intermediateCode,
+            String manifest, String codeLabel) {
         StringBuilder prompt = new StringBuilder();
 
         prompt.append("=== TAINT FLOW FINDING ===\n");
@@ -455,7 +458,9 @@ public class TaiEPOC implements poc {
 
     private void findFilesByName(File dir, String fileName, List<File> results) {
         File[] children = dir.listFiles();
-        if (children == null) return;
+        if (children == null) {
+            return;
+        }
         for (File child : children) {
             if (child.isDirectory()) {
                 findFilesByName(child, fileName, results);
@@ -491,8 +496,8 @@ public class TaiEPOC implements poc {
     private String findAndReadManifest() {
         String decompiledPath = PathUtils.getDecompiledApkPath();
         String[] possiblePaths = {
-                decompiledPath + "AndroidManifest.xml",
-                decompiledPath + "resources/AndroidManifest.xml"
+            decompiledPath + "AndroidManifest.xml",
+            decompiledPath + "resources/AndroidManifest.xml"
         };
         for (String path : possiblePaths) {
             File file = new File(path);
@@ -508,8 +513,8 @@ public class TaiEPOC implements poc {
     private String findManifestPath() {
         String decompiledPath = PathUtils.getDecompiledApkPath();
         String[] possiblePaths = {
-                decompiledPath + "AndroidManifest.xml",
-                decompiledPath + "resources/AndroidManifest.xml"
+            decompiledPath + "AndroidManifest.xml",
+            decompiledPath + "resources/AndroidManifest.xml"
         };
         for (String path : possiblePaths) {
             File file = new File(path);
@@ -610,7 +615,9 @@ public class TaiEPOC implements poc {
                 break;
             }
             if (!trimmed.isEmpty()) {
-                if (fallback.length() > 0) fallback.append("\n");
+                if (fallback.length() > 0) {
+                    fallback.append("\n");
+                }
                 fallback.append(line);
             }
         }
@@ -623,8 +630,8 @@ public class TaiEPOC implements poc {
         }
 
         String singleLine = cmd.replaceAll("\\\\\\s*\\n\\s*", " ")
-                               .replaceAll("\\s+", " ")
-                               .trim();
+                .replaceAll("\\s+", " ")
+                .trim();
 
         if (singleLine.startsWith("adb shell ")) {
             String shellPart = singleLine.substring("adb shell ".length()).trim();

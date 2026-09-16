@@ -1,5 +1,11 @@
 package com.thorfinn.poc;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+
 import com.phonepe.sentinelai.core.agent.Agent;
 import com.phonepe.sentinelai.core.agent.AgentOutput;
 import com.phonepe.sentinelai.core.agent.AgentRunContext;
@@ -9,13 +15,8 @@ import com.phonepe.sentinelai.core.errors.ErrorType;
 import com.phonepe.sentinelai.core.tools.Tool;
 import com.phonepe.sentinelai.core.utils.ToolUtils;
 import com.thorfinn.models.TaiEAgentModels;
-import lombok.extern.slf4j.Slf4j;
 
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class TaiEFlowAgent extends Agent<TaiEAgentModels.FlowRequest, TaiEAgentModels.FlowResponse, TaiEFlowAgent> {
@@ -87,7 +88,7 @@ public class TaiEFlowAgent extends Agent<TaiEAgentModels.FlowRequest, TaiEAgentM
                FALSE POSITIVE if: explicit component set OR FLAG_IMMUTABLE used OR PendingIntent never leaves app process OR setPackage() restricts recipient.
                NOTE: If targetSdkVersion >= 31 and no FLAG_MUTABLE, system throws exception - code likely sets a flag, verify which one.
 
-            9. CustomTabIntent Vulnerability: App uses CustomTabsIntent.launchUrl() with attacker-controlled URL (from Intent extra, deep link, or other input) without validation. If the app communicates with the loaded URL using postMessage APIs, the attacker can load their own malicious URL and exploit the postMessage calls.
+            9. CustomTab Vulnerability: App uses CustomTabsIntent.launchUrl() with attacker-controlled URL (from Intent extra, deep link, or other input) without validation. If the app communicates with the loaded URL using postMessage APIs, the attacker can load their own malicious URL and exploit the postMessage calls.
                Determine whether the app implements postMessage communication with the custom tab:
                     1. PostMessage communication has been implemented between the app and the custom tab if:
                         a) The app calls CustomTabsSession.requestPostMessageChannel() with the custom tab's URL. https://developer.android.com/reference/androidx/browser/customtabs/CustomTabsSession#requestPostMessageChannel(android.net.Uri)
@@ -167,6 +168,7 @@ public class TaiEFlowAgent extends Agent<TaiEAgentModels.FlowRequest, TaiEAgentM
 
     @SuppressWarnings("unchecked")
     private static final class TaiEErrorHandler implements ErrorResponseHandler<TaiEAgentModels.FlowRequest> {
+
         @Override
         public <U> AgentOutput<U> handle(AgentRunContext<TaiEAgentModels.FlowRequest> context, AgentOutput<U> output) {
             ErrorType errorType = output.getError() != null
@@ -193,6 +195,7 @@ public class TaiEFlowAgent extends Agent<TaiEAgentModels.FlowRequest, TaiEAgentM
     }
 
     public static final class LookupTools {
+
         private final TaiECodeLookupService lookupService;
         private final String decompiledRootPath;
 
@@ -203,7 +206,7 @@ public class TaiEFlowAgent extends Agent<TaiEAgentModels.FlowRequest, TaiEAgentM
         }
 
         @Tool(name = "read_file_full",
-              value = "Read full class file content by class name and code label (JAVA/SMALI). Includes exact then fuzzy lookup.")
+                value = "Read full class file content by class name and code label (JAVA/SMALI). Includes exact then fuzzy lookup.")
         public String readFileFull(String className, String codeLabel) {
             long callId = TOOL_CALL_SEQ.incrementAndGet();
             long startNs = System.nanoTime();
@@ -235,7 +238,7 @@ public class TaiEFlowAgent extends Agent<TaiEAgentModels.FlowRequest, TaiEAgentM
         }
 
         @Tool(name = "read_manifest",
-              value = "Read AndroidManifest.xml from decompiled output using apktool/jadx fallback locations.")
+                value = "Read AndroidManifest.xml from decompiled output using apktool/jadx fallback locations.")
         public String readManifest() {
             long callId = TOOL_CALL_SEQ.incrementAndGet();
             long startNs = System.nanoTime();
@@ -243,8 +246,8 @@ public class TaiEFlowAgent extends Agent<TaiEAgentModels.FlowRequest, TaiEAgentM
             try {
                 Path root = Path.of(decompiledRootPath);
                 Path[] possiblePaths = {
-                        root.resolve("AndroidManifest.xml"),
-                        root.resolve("resources").resolve("AndroidManifest.xml")
+                    root.resolve("AndroidManifest.xml"),
+                    root.resolve("resources").resolve("AndroidManifest.xml")
                 };
 
                 for (Path manifestPath : possiblePaths) {

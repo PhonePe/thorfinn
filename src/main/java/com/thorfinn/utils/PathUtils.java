@@ -45,4 +45,8 @@ public class PathUtils {
         return getBaseDirectory() + ConfigContext.getConfig().getPathConfigs().getOutputPath();
     }
 
+    public static String getCvssConfigPath() {
+        return getBaseDirectory() + ConfigContext.getConfig().getPathConfigs().getCvssConfigPath();
+    }
+
 }

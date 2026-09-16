@@ -33,6 +33,10 @@ public class JsonReportGenerator {
             Map<String, Object> vuln = new LinkedHashMap<>();
             vuln.put("signature", computeSignature(f));
             vuln.put("status", statusLabel(r, f));
+            vuln.put("severity", f.getSeverity());
+            vuln.put("cvssScore", f.getCvssScore());
+            vuln.put("cvssBaseScore", f.getCvssBaseScore());
+            vuln.put("cvssVector", f.getCvssVector());
             vuln.put("version", f.getVersion());
             vuln.put("vulnerabilityClass", f.getVulnerabilityClass());
             vuln.put("tool", f.getTool());

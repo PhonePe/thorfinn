@@ -72,6 +72,10 @@ public final class PreviousReportUtils {
                 .vulnerabilityClass(text(f, "vulnerabilityClass"))
                 .analysis(text(f, "llmVerdict"))
                 .poc(truePositive ? text(f, "pocCommand") : null)
+                .severity(text(f, "severity"))
+                .cvssScore(f.has("cvssScore") && !f.get("cvssScore").isNull() ? f.get("cvssScore").asDouble() : null)
+                .cvssBaseScore(f.has("cvssBaseScore") && !f.get("cvssBaseScore").isNull() ? f.get("cvssBaseScore").asDouble() : null)
+                .cvssVector(text(f, "cvssVector"))
                 .build();
     }
 
